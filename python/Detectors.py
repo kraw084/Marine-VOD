@@ -1,5 +1,7 @@
 import torch
 
+
+
 class YoloV5ObjectDetector:
     """Wrapper class for still image yolov5 model"""
     def __init__(self, weight_path, classes, conf=0.45, iou=0.6, img_size=1280, cuda=None):
@@ -38,6 +40,11 @@ class YoloV5ObjectDetector:
 
     def __call__(self, im):
         return self.predict(im)
+    
+    def xywhcl(self, im):
+        """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
+        the x, y, w, h, conf and label of each prediction"""
+        
 
 
 def create_urchin_model(cuda = None):
