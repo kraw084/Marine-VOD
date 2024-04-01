@@ -1,7 +1,6 @@
 import torch
 
 
-
 class YoloV5ObjectDetector:
     """Wrapper class for still image yolov5 model"""
     def __init__(self, weight_path, classes, conf=0.45, iou=0.6, img_size=1280, cuda=None):
@@ -61,6 +60,16 @@ def create_urchin_model(cuda = None):
     return YoloV5ObjectDetector("models/urchin_bot.pt",
                                 ["Evechinus chloroticus","Centrostephanus rodgersii"],
                                 cuda=cuda)
+
+
+def frame_predictions(model, frames):
+    """Generates predictions on each frame of a video"""
+    predictions = []
+    for frame in frames:
+        pred = model.xywhcl(frame)
+        predictions.append(pred)
+    
+    return predictions
 
 
 #model = create_urchin_model()
