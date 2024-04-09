@@ -3,7 +3,7 @@ import torch
 
 class YoloV5ObjectDetector:
     """Wrapper class for still image yolov5 model"""
-    def __init__(self, weight_path, classes, conf=0.45, iou=0.6, img_size=1280, cuda=None):
+    def __init__(self, weight_path, classes, colours, conf=0.45, iou=0.6, img_size=1280, cuda=None):
         self.weight_path = weight_path
         self.conf = conf
         self.iou = iou
@@ -11,6 +11,7 @@ class YoloV5ObjectDetector:
         self.cuda = cuda if not cuda is None else torch.cuda.is_available()
 
         self.num_to_class = classes
+        self.num_to_color = colours
 
         self.model = torch.hub.load("yolov5", "custom", path=self.weight_path, source="local")
         self.model.cuda() if self.cuda else self.model.cpu()
@@ -45,7 +46,6 @@ class YoloV5ObjectDetector:
         the x, y, w, h, conf and label codes of each prediction"""
         pred = self(im).xywh[0].cpu().numpy()
         for row in pred:
-            print(row)
             row[0] = round(row[0])
             row[1] = round(row[1])
             row[2] = round(row[2])
@@ -59,6 +59,7 @@ class YoloV5ObjectDetector:
 def create_urchin_model(cuda = None):
     return YoloV5ObjectDetector("models/urchin_bot.pt",
                                 ["Evechinus chloroticus","Centrostephanus rodgersii"],
+                                [(15, 250, 235), (11, 11, 227)],
                                 cuda=cuda)
 
 
@@ -72,5 +73,16 @@ def frame_predictions(model, frames):
     return predictions
 
 
-#model = create_urchin_model()
-#model.xywhcl("C:/Users/kelha/Documents/Uni/Summer Research/Urchin-Detector/data/images/im2360606.JPG")
+if __name__ == "__main__":
+    model = create_urchin_model()
+    results = model.xywhcl("C:/Users/kelha/Documents/Uni/Summer Research/Urchin-Detector/data/images/im2360606.JPG")
+    print(len(results))
+
+    import cv2
+    from Video_utils import annotate_image, resize_image
+
+    im = cv2.imread("C:/Users/kelha/Documents/Uni/Summer Research/Urchin-Detector/data/images/im2360606.JPG")
+    annotate_image(im, results, model.num_to_class, model.num_to_color)
+    im = resize_image(im, new_width=640)
+    cv2.imshow("im", im)
+    cv2.waitKey(0)

@@ -51,33 +51,33 @@ def video_frame_by_frame(video_file_path, delay=0, delay_is_fps=False, size=640)
     cv2.destroyAllWindows()
 
 
-def annotate_image(im, prediction, num_to_label, num_to_colour):
+def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True):
         """Draws xywhcl boxes onto a single image. Colours are BGR"""
         thickness = 2
-        font_size = 1
+        font_size = 0.75
 
         label_data = []
         for pred in prediction:
-            top_left = (pred[0], pred[1])
-            bottom_right = (top_left[0] + pred[2], top_left[1] + pred[3])
+            top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
+            bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
             label = num_to_label[int(pred[5])]
             label = f"{label[0]}. {label.split()[1]}"
 
-            colour = num_to_colour[pred[5]]
+            colour = num_to_colour[int(pred[5])]
 
             #Draw boudning box
             im = cv2.rectangle(im, top_left, bottom_right, colour, thickness)
 
-            label_data.append((f"{label} - {pred[4]:.2f}", top_left, colour))
+            label_data.append((f"{label} - {float(pred[4]):.2f}", top_left, colour))
         
         #Draw text over boxes
-        for data in label_data:
-            text_size = cv2.getTextSize(data[0], cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
-            text_box_top_left = (data[1][0], data[1][1] - text_size[1])
-            text_box_bottom_right = (data[1][0] + text_size[0], data[1][1])
-            im = cv2.rectangle(im, text_box_top_left, text_box_bottom_right, data[4], -1)
-
-            im = cv2.putText(im, data[0], data[1][0], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness, cv2.LINE_AA)
+        if draw_labels:
+            for data in label_data:
+                text_size = cv2.getTextSize(data[0], cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
+                text_box_top_left = (data[1][0], data[1][1] - text_size[1])
+                text_box_bottom_right = (data[1][0] + text_size[0], data[1][1])
+                im = cv2.rectangle(im, text_box_top_left, text_box_bottom_right, data[2], -1)
+                im = cv2.putText(im, data[0], data[1], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
 
 
 def resize_image(im, new_width=None, new_height=None):
