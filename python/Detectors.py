@@ -74,9 +74,11 @@ def frame_predictions(model, frames):
 
 
 if __name__ == "__main__":
+    #code for testing detectors and displaying their predictions
     model = create_urchin_model()
+    model.update_parameters(0.001, 1)
     results = model.xywhcl("C:/Users/kelha/Documents/Uni/Summer Research/Urchin-Detector/data/images/im2360606.JPG")
-    print(len(results))
+    print(f"Number of preds: {len(results)}")
 
     import cv2
     from Video_utils import annotate_image, resize_image
