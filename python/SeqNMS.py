@@ -22,6 +22,18 @@ class SeqNmsTracklet:
         
     def tracklet_length(self):
         return len(self.boxes)
+    
+    def id(self):
+        return self.id
+    
+    def __iter__(self):
+        self.__i = 0
+        return self
+    
+    def __next__(self):
+        val = (self.frame_indexes[self.__i], self.box_index[self.__i], self.boxes[self.__i])
+        self.__i += 1
+        return val
 
 
 def select_sequence(frame_preds, id):
@@ -34,13 +46,21 @@ def select_sequence(frame_preds, id):
     for frame_index in range(len(frame_preds) - 2, -1, -1):
         current_scores = []
         current_sequences = []
+
         boxes = frame_preds[frame_index]
+
+        #if there are no boxes in this frame, skip it
+        if not boxes: continue
 
         #If there are no boxes in the previous frame
         if not frame_preds[frame_index + 1]:
             for box_index in range(len(boxes)):
                 current_scores.append(boxes[box_index][4])
                 current_sequences.append([(frame_index, box_index)])
+                previous_scores = current_scores
+                previous_sequences = current_sequences
+
+            continue
 
         iou_mat = iou_matrix(boxes, frame_preds[frame_index + 1])
 
@@ -81,10 +101,11 @@ def select_sequence(frame_preds, id):
     for (frame_index, box_index) in best_sequence:
         tracklet.add_box(frame_preds[frame_index][box_index], box_index, frame_index)
 
-    print(f"Tracklet found - Score: {best_score}, length: {len(best_sequence)}")
+    print(f"Tracklet {id} found - Score: {best_score}, length: {len(best_sequence)}")
     return tracklet
 
-def Seq_nms(model, video_path):
+
+def Seq_nms(model, video_path, nms_iou = 0.6):
     """Implements Seq_nms from Han, W. et al (2016)"""
     model.update_parameters(conf=0.001, iou=1) #update parameters to effectively skip NMS
 
@@ -94,4 +115,33 @@ def Seq_nms(model, video_path):
     print(f"Total box predictions: {len(frame_predictions)}")
     print(f"Avg predictions per frame: {len(frame_predictions)/len(frames)}")
 
+    detected_tracklets = []
+    id_counter = 0
+    remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
+    while remaining_boxes > 0:
+        print(f"Total remaining boxes: {remaining_boxes}")
 
+        #detected the sequence with the max score
+        tracklet = select_sequence(frame_predictions, id_counter)
+        detected_tracklets.append(tracklet)
+        id_counter += 1
+
+        #Non maximal supression
+        boxes_removed = 0
+        for frame_index, box_index, target_box in tracklet:
+            boxes = frame_predictions[frame_index]
+            boxes.pop(box_index)
+
+            label = target_box[5]
+            iou_mat = iou_matrix([target_box], boxes)[0]
+            overlapping_box_indexes = [i for i in range(len(iou_mat)) 
+                                  if iou_mat[i] >= nms_iou and 
+                                  label == frame_predictions[frame_index][i][5]]
+            
+            for i in overlapping_box_indexes: boxes.pop(i)
+            boxes_removed += len(overlapping_box_indexes) + 1
+        print(f"NMS complete - {boxes_removed} boxes removed")
+
+        remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
+
+    return detected_tracklets
