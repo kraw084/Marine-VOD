@@ -33,8 +33,8 @@ def frames_to_videos(frames, video_file_path, fps, fourcc, size):
     video.release()
 
 
-def video_frame_by_frame(video_file_path, delay=0, delay_is_fps=False, size=640):
-    """Play a video frame by frame with delay millisconds beetween frame"""
+def play_video(video_file_path, delay=0, delay_is_fps=False, size=640):
+    """Loads and plays a video frame by frame with delay millisconds beetween frame"""
     cap = cv2.VideoCapture(video_file_path)
 
     if delay_is_fps: delay = round(1000 * (1/delay))       
@@ -51,13 +51,25 @@ def video_frame_by_frame(video_file_path, delay=0, delay_is_fps=False, size=640)
     cv2.destroyAllWindows()
 
 
-def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True):
+def play_frame_by_frame(frames, delay=0, delay_is_fps=False, size=640):
+    """Plays a set of frames as a videowith delay millisconds beetween frame"""
+    if delay_is_fps: delay = round(1000 * (1/delay))       
+
+    for frame in frames:
+        frame = resize_image(frame, new_width=size) if frame.shape[1] > frame.shape[0] else resize_image(frame, new_height=size)
+        cv2.imshow(f"Video", frame)
+        cv2.waitKey(delay)
+
+    cv2.destroyAllWindows()
+
+
+def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True, ids=None):
         """Draws xywhcl boxes onto a single image. Colours are BGR"""
         thickness = 2
         font_size = 0.75
 
         label_data = []
-        for pred in prediction:
+        for i, pred in enumerate(prediction):
             top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
             bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
             label = num_to_label[int(pred[5])]
@@ -68,7 +80,7 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True
             #Draw boudning box
             im = cv2.rectangle(im, top_left, bottom_right, colour, thickness)
 
-            label_data.append((f"{label} - {float(pred[4]):.2f}", top_left, colour))
+            label_data.append((f"{f'{ids[i]}. ' if ids else ''}{label} - {float(pred[4]):.2f}", top_left, colour))
         
         #Draw text over boxes
         if draw_labels:

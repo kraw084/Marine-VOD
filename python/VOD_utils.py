@@ -2,11 +2,18 @@ import os
 import sys
 import torch
 import cv2
-from Video_utils import annotate_image, resize_image
+import numpy as np
+import colorsys
+from Video_utils import annotate_image, resize_image, play_frame_by_frame
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
+
+NUM_OF_COLOURS = 8
+colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
+colours = [(round(255 * c[2]), round(255 * c[1]), round(255 * c[0])) for c in colours]
+
 
 
 def xywhTOxyxy(x, y, w, h):
@@ -41,3 +48,16 @@ def display_tracklet(frames, tracklet, num_to_label, num_to_colour):
         frame = resize_image(frame, 640)
         cv2.imshow(f"Tracklet {id}", frame)
         cv2.waitKey(0)
+
+
+def display_VOD(frames, tracklets, num_to_label):
+    """Draws a set of tracklets onto a video and plays it frame by frame"""
+    for i, tracklet in enumerate(tracklets):
+        id = tracklet.id()
+        colour = colours[i%len(colours)]
+        for frame_index, _, box in tracklet:
+            colour = None
+            annotate_image(frames[frame_index], [box], num_to_label, [colour] * len(num_to_label), ids=[id])
+
+    play_frame_by_frame(frames, 0, size=640)
+    
