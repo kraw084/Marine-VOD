@@ -1,5 +1,6 @@
 from Video_utils import video_to_frames
 from VOD_utils import iou_matrix
+import numpy as np
 
 class SeqNmsTracklet:
     def __init__(self, id):
@@ -68,25 +69,27 @@ def select_sequence(frame_preds, id):
             conf = boxes[box_index][4]
             label = boxes[box_index][5]
 
-            #find linked boxes in previous frame with the same class
-            linked_box_indexes = [i for i in range(len(iou_mat[box_index])) 
-                                  if iou_mat[box_index][i] >= 0.5 and 
-                                  label == frame_preds[frame_index + 1][i][5]]
+            #find linked boxes in previous frame with the same class            
+            linked_box_indexes = np.where((iou_mat[box_index] >= 0.5) & 
+                                          (label == np.array(frame_preds[frame_index + 1])[:,5]))[0]
             
-            #choose the linked box with the highest score
-            selected_index = linked_box_indexes[0]
-            selected_score = previous_scores[selected_index]
-            for i in linked_box_indexes[1:]:
-                if previous_scores[i] > selected_score:
-                    selected_index = i
-                    selected_score = previous_scores[i]
-            
-            #set the current score and sequence
-            current_score = conf + selected_score
-            current_scores.append(current_score)
+            if linked_box_indexes:
+                #choose the linked box with the highest score
+                selected_index = linked_box_indexes[np.argmax(np.array(previous_scores)[linked_box_indexes])]
+                selected_score = previous_scores[selected_index]
 
-            current_sequence = [(frame_index, box_index)] + previous_sequences[selected_index]
-            current_sequences.append(current_sequences)
+                #set the current score and sequence
+                current_score = conf + selected_score
+                current_scores.append(current_score)
+
+                current_sequence = [(frame_index, box_index)] + previous_sequences[selected_index]
+                current_sequences.append(current_sequences)
+            else:
+                #if there are no linked boxes
+                current_score = conf
+                current_scores.append(current_score)
+                current_sequence = [(frame_index, box_index)]
+                current_sequences.append(current_sequences)
 
             #if this is the new best score
             if current_score >= best_score:
