@@ -63,6 +63,7 @@ def select_sequence(frame_preds, id):
 
             continue
 
+        #Computes the iou between every box in this frame and the next frame
         iou_mat = iou_matrix(boxes, frame_preds[frame_index + 1])
 
         for box_index in range(len(boxes)):
