@@ -16,26 +16,27 @@ colours = [(round(255 * c[2]), round(255 * c[1]), round(255 * c[0])) for c in co
 
 class Tracklet:
     def __init__(self, id):
-        self.boxes = []
-        self.frame_indexes = []
-        self.id = id
+        self.__boxes = []
+        self.__frame_indexes = []
+        self.__id = id
 
     def add_box(self, box, frame_index):
-        self.boxes.append(box)
-        self.frame_indexes.append(frame_index)
+        self.__boxes.append(box)
+        self.__frame_indexes.append(frame_index)
         
     def tracklet_length(self):
-        return len(self.boxes)
+        return len(self.__boxes)
     
     def id(self):
-        return self.id
+        return self.__id
     
     def __iter__(self):
         self.__i = 0
         return self
     
     def __next__(self):
-        val = (self.frame_indexes[self.__i], self.boxes[self.__i])
+        if self.__i >= len(self.__boxes): raise StopIteration
+        val = (self.__frame_indexes[self.__i], self.__boxes[self.__i])
         self.__i += 1
         return val
 
@@ -66,7 +67,7 @@ def display_tracklet(frames, tracklet, num_to_label, num_to_colour):
     """Draws a single tracklet on a video segment and displays it frame by frame"""
     id = tracklet.id()
 
-    for frame_index, _, box in tracklet:
+    for frame_index, box in tracklet:
         frame = frames[frame_index]
         annotate_image(frame, [box], num_to_label, num_to_colour)
         frame = resize_image(frame, 640)
@@ -74,14 +75,15 @@ def display_tracklet(frames, tracklet, num_to_label, num_to_colour):
         cv2.waitKey(0)
 
 
-def display_VOD(frames, tracklets, num_to_label):
+def display_VOD(frames, tracklets, num_to_label, size=640, delay=0):
     """Draws a set of tracklets onto a video and plays it frame by frame"""
+    frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
+
     for i, tracklet in enumerate(tracklets):
         id = tracklet.id()
         colour = colours[i%len(colours)]
-        for frame_index, _, box in tracklet:
-            colour = None
+        for frame_index, box in tracklet:
             annotate_image(frames[frame_index], [box], num_to_label, [colour] * len(num_to_label), ids=[id])
 
-    play_frame_by_frame(frames, 0, size=640)
+    play_frame_by_frame(frames, delay, size=size)
     

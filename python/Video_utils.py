@@ -73,7 +73,6 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True
             top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
             bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
             label = num_to_label[int(pred[5])]
-            label = f"{label[0]}. {label.split()[1]}"
 
             colour = num_to_colour[int(pred[5])]
 

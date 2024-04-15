@@ -2,8 +2,13 @@
 
 import os
 import cv2
+import numpy as np
 import configparser
-from Video_utils import frames_to_videos
+from VOD_utils import Tracklet, display_VOD
+from Video_utils import frames_to_videos, video_to_frames
+
+
+NUM_TO_LABEL = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", ""]
 
 
 def create_bMOT_videos():
@@ -27,6 +32,42 @@ def create_bMOT_videos():
             frames_to_videos(frames, "BrackishMOT/videos/" + video_folder + ".mp4", fps, None, size)
             
 
+def brackishMOT_tracklet(video_number):
+    video_folder_name = f"brackishMOT-{video_number:02}"
+    set = "train" if os.path.isdir("BrackishMOT/train/" + video_folder_name) else "test"
+    txt = open(f"BrackishMOT/{set}/{video_folder_name}/gt/gt.txt")
+
+    lines = txt.readlines()
+    lines = [tuple([int(num.split(".")[0]) for num in line.strip("/n").split(",")][:-1]) for line in lines]
+
+    tracklets = {}
+
+    for frame, id, x_topleft, y_topleft, width, height, conf, label in lines:
+        #convert box to correct
+        x = x_topleft + width//2
+        y = y_topleft + height//2
+
+        box = np.array([x, y, width, height, conf, label])
+        if id in tracklets:
+            tracklets[id].add_box(box, frame - 1)
+        else:
+            new_tracklet = Tracklet(id)
+            new_tracklet.add_box(box, frame - 1)
+            tracklets[id] = new_tracklet
+    
+    return list(tracklets.values())
 
 
-create_bMOT_videos()
+def play_brackish_video(video_number):
+    frames = video_to_frames(f"BrackishMOT/videos/brackishMOT-{video_number:02}.mp4")[0]
+    tracklets = brackishMOT_tracklet(video_number)
+
+    display_VOD(frames, tracklets, NUM_TO_LABEL, 1080, 20)
+
+
+
+#create_bMOT_videos()
+
+#brackishMOT_tracklet(1)
+for i in range(10, 100):
+    play_brackish_video(i)
