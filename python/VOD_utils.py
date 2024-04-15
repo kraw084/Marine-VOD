@@ -14,6 +14,30 @@ NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
 colours = [(round(255 * c[2]), round(255 * c[1]), round(255 * c[0])) for c in colours]
 
+class Tracklet:
+    def __init__(self, id):
+        self.boxes = []
+        self.frame_indexes = []
+        self.id = id
+
+    def add_box(self, box, frame_index):
+        self.boxes.append(box)
+        self.frame_indexes.append(frame_index)
+        
+    def tracklet_length(self):
+        return len(self.boxes)
+    
+    def id(self):
+        return self.id
+    
+    def __iter__(self):
+        self.__i = 0
+        return self
+    
+    def __next__(self):
+        val = (self.frame_indexes[self.__i], self.boxes[self.__i])
+        self.__i += 1
+        return val
 
 
 def xywhTOxyxy(x, y, w, h):

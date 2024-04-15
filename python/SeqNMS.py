@@ -1,13 +1,11 @@
 from Video_utils import video_to_frames
-from VOD_utils import iou_matrix
+from VOD_utils import iou_matrix, Tracklet
 import numpy as np
 
-class SeqNmsTracklet:
+class SeqNmsTracklet(Tracklet):
     def __init__(self, id):
-        self.boxes = []
+        super().__init__(id)
         self.box_index = []
-        self.frame_indexes = []
-        self.id = id
 
     def add_box(self, box, box_index, frame_index):
         self.boxes.append(box)
@@ -21,16 +19,6 @@ class SeqNmsTracklet:
         if type == "max":
             return max(conf_values)
         
-    def tracklet_length(self):
-        return len(self.boxes)
-    
-    def id(self):
-        return self.id
-    
-    def __iter__(self):
-        self.__i = 0
-        return self
-    
     def __next__(self):
         val = (self.frame_indexes[self.__i], self.box_index[self.__i], self.boxes[self.__i])
         self.__i += 1
@@ -142,10 +130,12 @@ def Seq_nms(model, video_path, nms_iou = 0.6):
                                   if iou_mat[i] >= nms_iou and 
                                   label == frame_predictions[frame_index][i][5]]
             
-            for i in overlapping_box_indexes: boxes.pop(i)
-            boxes_removed += len(overlapping_box_indexes) + 1
-        print(f"NMS complete - {boxes_removed} boxes removed")
+            for i in sorted(overlapping_box_indexes, reverse=True): 
+                boxes.pop(i)
 
+            boxes_removed += len(overlapping_box_indexes) + 1
+
+        print(f"NMS complete - {boxes_removed} boxes removed")
         remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
 
     return detected_tracklets
