@@ -8,7 +8,7 @@ import shutil
 import random
 import math
 import sys
-from Video_utils import Video
+from Video_utils import Video, frames_to_video
 from VOD_utils import Tracklet, TrackletSet
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -36,7 +36,7 @@ def create_bMOT_videos():
             config.read(path + "/" + video_folder + "/seqinfo.ini")
             fps = int(config["Sequence"]["frameRate"])
 
-            frames_to_videos(frames, "BrackishMOT/videos/" + video_folder + ".mp4", fps, None, size)
+            frames_to_video(frames, "BrackishMOT/videos/" + video_folder + ".mp4", fps, None, size)
             
 
 def brackishMOT_tracklet(video_number):
@@ -79,9 +79,9 @@ def create_yolo_images_and_labels():
         for video_folder in video_folders:
             video_number = video_folder[-2:]
 
-            for im in os.listdir(path + "/" + video_folder + "/" + "img1"):
-                im_full_path = path + "/" + video_folder + "/img1/" + im
-                shutil.copyfile(im_full_path, "BrackishMOT/images/vid" + video_number + "-" + im)
+            #for im in os.listdir(path + "/" + video_folder + "/" + "img1"):
+            #    im_full_path = path + "/" + video_folder + "/img1/" + im
+            #    shutil.copyfile(im_full_path, "BrackishMOT/images/vid" + video_number + "-" + im)
                 
             txt = open(f"BrackishMOT/{set}/{video_folder}/gt/gt.txt")
             lines = txt.readlines()
@@ -90,10 +90,12 @@ def create_yolo_images_and_labels():
             for frame, id, x_topleft, y_topleft, width, height, conf, label in lines:
                 if label > 5: continue
 
+                h, w = 1080, 1920
+
                 x = x_topleft + width//2
                 y = y_topleft + height//2
 
-                box = f"{label}, {x}, {y}, {width}, {height}"
+                box = f"{label} {min(x/w, 1)} {min(y/h, 1)} {min(width/w, 1)} {min(height/h, 1)}"
 
                 label_path = f"BrackishMOT/labels/vid{video_number}-{frame:06}.txt"
                 if os.path.isfile(label_path):
@@ -130,9 +132,9 @@ def train_test_split():
         vid_number = int(im[3:5])
         set_code = target_set[vid_number - 1]
 
-        if set_code == 0: train.append("images/" + im)
-        if set_code == 1: val.append("images/" + im)
-        if set_code == 2: test.append("images/" + im)
+        if set_code == 0: train.append("E:/Marine-VOD/BrackishMOT/images/" + im)
+        if set_code == 1: val.append("E:/Marine-VOD/BrackishMOT/images/" + im)
+        if set_code == 2: test.append("E:/Marine-VOD/BrackishMOT/images/" + im)
 
     total = len(train + val + test)
     print(len(train)/total, len(val)/total, len(test)/total)
@@ -149,9 +151,10 @@ def train_brackish_detector():
                         data = "BrackishMOT/brackishMOT.yaml", 
                         weights = "yolov5s.pt", 
                         save_period = 10,
-                        batch_size = -1,
-                        cache = "ram",
+                        batch_size = 52,
+                        #cache = "ram",
                         patience = 50,
+                        resume = "E:/Marine-VOD/yolov5/runs/train/exp2/weights/epoch30.pt"
                         )
 
 if __name__ == "__main__":
