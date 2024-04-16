@@ -5,9 +5,8 @@ import cv2
 import numpy as np
 import configparser
 import shutil
-from VOD_utils import Tracklet, display_VOD
-from Video_utils import frames_to_videos, video_to_frames
-
+from Video_utils import Video
+from VOD_utils import Tracklet, TrackletSet
 
 NUM_TO_LABEL = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", ""]
 
@@ -60,10 +59,10 @@ def brackishMOT_tracklet(video_number):
 
 
 def play_brackish_video(video_number):
-    frames = video_to_frames(f"BrackishMOT/videos/brackishMOT-{video_number:02}.mp4")[0]
-    tracklets = brackishMOT_tracklet(video_number)
+    vid = Video(f"BrackishMOT/videos/brackishMOT-{video_number:02}.mp4")
+    tracklets = TrackletSet(vid, brackishMOT_tracklet(video_number), NUM_TO_LABEL)
 
-    display_VOD(frames, tracklets, NUM_TO_LABEL, 1080, 20)
+    tracklets.play_video(30)
 
 
 def create_yolo_images_and_labels():
@@ -104,7 +103,7 @@ if __name__ == "__main__":
     #create_bMOT_videos()
 
     #brackishMOT_tracklet(1)
-    #for i in range(10, 100):
-    #    play_brackish_video(i)
+    for i in range(10, 100):
+        play_brackish_video(i)
 
-    create_yolo_images_and_labels()
+    #create_yolo_images_and_labels()
