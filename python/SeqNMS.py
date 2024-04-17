@@ -6,6 +6,7 @@ class SeqNmsTracklet(Tracklet):
     def __init__(self, id):
         super().__init__(id)
         self.box_index = []
+        self.sequence_conf = 0
 
     def add_box(self, box, box_index, frame_index):
         self.boxes.append(box)
@@ -18,6 +19,12 @@ class SeqNmsTracklet(Tracklet):
             return sum(conf_values)/len(conf_values)
         if type == "max":
             return max(conf_values)
+        
+    def set_conf(self, type):
+        conf = self.tracklet_conf(type)
+        self.sequence_conf = conf
+
+        for box in self.__boxes: box[4] = conf
         
     def __next__(self):
         val = (self.frame_indexes[self.__i], self.box_index[self.__i], self.boxes[self.__i])
@@ -115,6 +122,7 @@ def Seq_nms(model, video_path, nms_iou = 0.6):
 
         #detected the sequence with the max score
         tracklet = select_sequence(frame_predictions, id_counter)
+        tracklet.set_conf("avg")
         detected_tracklets.append(tracklet)
         id_counter += 1
 

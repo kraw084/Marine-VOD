@@ -15,8 +15,8 @@ colours = [(round(255 * c[0]), round(255 * c[1]), round(255 * c[2])) for c in co
 
 def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True, ids=None):
         """Draws xywhcl boxes onto a single image. Colours are BGR"""
-        thickness = 2
-        font_size = 0.75
+        thickness = 3
+        font_size = 1
 
         label_data = []
         for i, pred in enumerate(prediction):
@@ -150,3 +150,19 @@ def iou_matrix(boxes1, boxes2):
     boxes2 = torch.tensor([xywhTOxyxy(*box2[:4]) for box2 in boxes2])
 
     return box_iou(boxes1, boxes2).numpy()
+
+
+def frame_by_frame_VOD(model, video, fps=None, resize=1080):
+    frame_predictions = [model.xywhcl(frame) for frame in video]
+    print("Finished predicting")
+
+    total = 0
+    for frame, frame_pred in zip(video, frame_predictions):
+        count = len(frame_pred)
+        total += count
+
+        annotate_image(frame, frame_pred, model.num_to_class, model.num_to_colour)
+        draw_data(frame, {"Objects":count, "Total":total})
+
+    print("Finished drawing")
+    video.play(fps=fps, resize=resize)

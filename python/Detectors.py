@@ -11,7 +11,7 @@ class YoloV5ObjectDetector:
         self.cuda = cuda if not cuda is None else torch.cuda.is_available()
 
         self.num_to_class = classes
-        self.num_to_color = colours
+        self.num_to_colour = colours
 
         self.model = torch.hub.load("yolov5", "custom", path=self.weight_path, source="local")
         self.model.cuda() if self.cuda else self.model.cpu()
@@ -59,7 +59,7 @@ class YoloV5ObjectDetector:
 def create_urchin_model(cuda = None):
     return YoloV5ObjectDetector("models/urchin_bot.pt",
                                 ["Evechinus chloroticus","Centrostephanus rodgersii"],
-                                [(15, 250, 235), (11, 11, 227)],
+                                [(235, 250,  15), (227, 11, 11)],
                                 cuda=cuda)
 
 

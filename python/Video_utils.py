@@ -50,7 +50,7 @@ class Video:
 
     def play(self, resize=1080, fps=None, start_frame=None, end_frame=None):
         if fps is None: fps = self.__fps
-        delay = round(1000 * (1/fps)) if fps != 0 else 0     
+        delay = round(1000/fps) if fps != 0 else 0
 
         for i, frame in enumerate(self.__frames):
             if not start_frame is None and i < start_frame: continue
@@ -87,7 +87,7 @@ class Video:
         return self
     
     def __next__(self):
-        if self.__i > self.__num_of_frames: raise StopIteration
+        if self.__i >= self.__num_of_frames: raise StopIteration
         frame = self.__frames[self.__i]
         self.__i += 1
         return frame
