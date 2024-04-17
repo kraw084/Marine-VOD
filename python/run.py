@@ -1,8 +1,11 @@
 import torch
 import os
+
 from Detectors import create_urchin_model
-from VOD_utils import frame_by_frame_VOD
 from Video_utils import Video
+
+from VOD_utils import frame_by_frame_VOD
+from SeqNMS import Seq_nms
 
 
 if __name__ == "__main__":
@@ -15,4 +18,9 @@ if __name__ == "__main__":
         vid = Video(urchin_video_folder + vid_name)
         print("Finished loading video")
         
-        frame_by_frame_VOD(urchin_bot, vid, 0, 1500)
+        #frame_by_frame_VOD(urchin_bot, vid, 0, 1500)
+
+        seqNMSTracklets = Seq_nms(urchin_bot, vid)
+        seqNMSTracklets.play_video(fps=15, size = 1500)
+        seqNMSTracklets.video.save("SeqNMSOutput.mp4")
+        break

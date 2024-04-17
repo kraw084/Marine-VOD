@@ -29,43 +29,43 @@ def resize_image(im, new_width=None, new_height=None):
 
 class Video:
     def __init__(self, video_file_path):
-        self.__name = video_file_path
-        self.__frames = []
+        self.name = video_file_path
+        self.frames = []
 
         cap = cv2.VideoCapture(video_file_path)
-        self.__size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #(w, h) of the image
-        self.__fps = cap.get(cv2.CAP_PROP_FPS) #frame rate of the video
-        self.__fourcc = int(cap.get(cv2.CAP_PROP_FOURCC)) #Fourcc video format code
+        self.size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #(w, h) of the image
+        self.fps = cap.get(cv2.CAP_PROP_FPS) #frame rate of the video
+        self.fourcc = int(cap.get(cv2.CAP_PROP_FOURCC)) #Fourcc video format code
 
         while cap.isOpened():
             success, frame = cap.read()
             if not success: break
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.__frames.append(frame)
+            self.frames.append(frame)
 
         cap.release()
 
-        self.__num_of_frames = len(self.__frames)
+        self.num_of_frames = len(self.frames)
 
     def play(self, resize=1080, fps=None, start_frame=None, end_frame=None):
-        if fps is None: fps = self.__fps
+        if fps is None: fps = self.fps
         delay = round(1000/fps) if fps != 0 else 0
 
-        for i, frame in enumerate(self.__frames):
+        for i, frame in enumerate(self.frames):
             if not start_frame is None and i < start_frame: continue
             if not end_frame is None and i > end_frame: break
 
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             frame = resize_image(frame, new_width=resize) if frame.shape[1] > frame.shape[0] else resize_image(frame, new_height=resize)
-            cv2.imshow(self.__name, frame)
+            cv2.imshow(self.name, frame)
             cv2.waitKey(delay)
 
         cv2.destroyAllWindows()
 
     def save(self, video_file_path):
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        video = cv2.VideoWriter(video_file_path, fourcc, self.__fps, self.__size)
+        video = cv2.VideoWriter(video_file_path, fourcc, self.fps, self.size)
 
         for frame in self:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -73,21 +73,15 @@ class Video:
 
         video.release()
 
-    def num_of_frames(self):
-        return self.__num_of_frames
-    
-    def frames(self):
-        return self.__frames
-
     def __repr__(self):
-        return f"Video({self.__name})"
+        return f"Video({self.name})"
     
     def __iter__(self):
-        self.__i = 0
+        self.i = 0
         return self
     
     def __next__(self):
-        if self.__i >= self.__num_of_frames: raise StopIteration
-        frame = self.__frames[self.__i]
-        self.__i += 1
+        if self.i >= self.num_of_frames: raise StopIteration
+        frame = self.frames[self.i]
+        self.i += 1
         return frame

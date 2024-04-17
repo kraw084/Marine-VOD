@@ -1,17 +1,23 @@
-from Video_utils import video_to_frames
-from VOD_utils import iou_matrix, Tracklet
+from VOD_utils import iou_matrix, Tracklet, TrackletSet
 import numpy as np
+from tqdm import tqdm
 
 class SeqNmsTracklet(Tracklet):
     def __init__(self, id):
         super().__init__(id)
-        self.box_index = []
+        self.box_indexes = []
         self.sequence_conf = 0
+        self.sequence_score = 0
 
     def add_box(self, box, box_index, frame_index):
         self.boxes.append(box)
-        self.box_index.append(box_index)
+        self.box_indexes.append(box_index)
         self.frame_indexes.append(frame_index)
+
+        if self.start_frame is None: self.start_frame = frame_index
+
+        if frame_index < self.start_frame: self.start_frame = frame_index
+        if frame_index > self.end_frame: self.end_frame = frame_index
 
     def tracklet_conf(self, type):
         conf_values = [box[4] for box in self.boxes]
@@ -24,22 +30,17 @@ class SeqNmsTracklet(Tracklet):
         conf = self.tracklet_conf(type)
         self.sequence_conf = conf
 
-        for box in self.__boxes: box[4] = conf
+        for box in self.boxes: box[4] = conf
         
-    def __next__(self):
-        val = (self.frame_indexes[self.__i], self.box_index[self.__i], self.boxes[self.__i])
-        self.__i += 1
-        return val
-
 
 def select_sequence(frame_preds, id):
     best_score = 0
     best_sequence = []
 
-    previous_scores = [box[4] for box in frame_index[-1]]
-    previous_sequences = [[(len(frame_index) - 1, prev_score)] for prev_score in previous_scores]
+    previous_scores = [box[4] for box in frame_preds[-1]]
+    previous_sequences = [[(len(frame_preds) - 1, i)] for i in range(len(previous_scores))]
 
-    for frame_index in range(len(frame_preds) - 2, -1, -1):
+    for frame_index in tqdm(range(len(frame_preds) - 2, -1, -1), bar_format="{l_bar}{bar:20}{r_bar}"):
         current_scores = []
         current_sequences = []
 
@@ -69,7 +70,7 @@ def select_sequence(frame_preds, id):
             linked_box_indexes = np.where((iou_mat[box_index] >= 0.5) & 
                                           (label == np.array(frame_preds[frame_index + 1])[:,5]))[0]
             
-            if linked_box_indexes:
+            if linked_box_indexes.shape[0]:
                 #choose the linked box with the highest score
                 selected_index = linked_box_indexes[np.argmax(np.array(previous_scores)[linked_box_indexes])]
                 selected_score = previous_scores[selected_index]
@@ -79,13 +80,13 @@ def select_sequence(frame_preds, id):
                 current_scores.append(current_score)
 
                 current_sequence = [(frame_index, box_index)] + previous_sequences[selected_index]
-                current_sequences.append(current_sequences)
+                current_sequences.append(current_sequence)
             else:
                 #if there are no linked boxes
                 current_score = conf
                 current_scores.append(current_score)
                 current_sequence = [(frame_index, box_index)]
-                current_sequences.append(current_sequences)
+                current_sequences.append(current_sequence)
 
             #if this is the new best score
             if current_score >= best_score:
@@ -97,40 +98,51 @@ def select_sequence(frame_preds, id):
 
     #Create trackelt object
     tracklet = SeqNmsTracklet(id)
+    tracklet.sequence_score = best_score
+
     for (frame_index, box_index) in best_sequence:
         tracklet.add_box(frame_preds[frame_index][box_index], box_index, frame_index)
 
-    print(f"Tracklet {id} found - Score: {best_score}, length: {len(best_sequence)}")
+    print(f"Tracklet found - Score: {best_score}, length: {len(best_sequence)}")
     return tracklet
 
 
-def Seq_nms(model, video_path, nms_iou = 0.6):
+def Seq_nms(model, video, nms_iou = 0.6):
     """Implements Seq_nms from Han, W. et al (2016)"""
-    model.update_parameters(conf=0.001, iou=1) #update parameters to effectively skip NMS
+    model.update_parameters(conf=0.01, iou=0.8) #update parameters to effectively skip NMS
 
-    frames = video_to_frames(video_path)[0]
-    print(f"Frames: {len(frames)}")
-    frame_predictions = [model.xywhcl(frame) for frame in frames]
-    print(f"Total box predictions: {len(frame_predictions)}")
-    print(f"Avg predictions per frame: {len(frame_predictions)/len(frames)}")
+    print(f"Frames: {video.num_of_frames}")
+    frame_predictions = [model.xywhcl(frame) for frame in video]
+    remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
+    print(f"Total box predictions: {remaining_boxes}")
+    print(f"Avg predictions per frame: {remaining_boxes/video.num_of_frames}")
 
     detected_tracklets = []
     id_counter = 0
-    remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
+    print("Begining SeqNMS")
     while remaining_boxes > 0:
+        print(f"----- Selecting sequence {id_counter} -----")
         print(f"Total remaining boxes: {remaining_boxes}")
 
         #detected the sequence with the max score
         tracklet = select_sequence(frame_predictions, id_counter)
+
+        #early stopping if scores get low
+        if tracklet.sequence_score < 0.8: break
+
         tracklet.set_conf("avg")
         detected_tracklets.append(tracklet)
         id_counter += 1
 
         #Non maximal supression
         boxes_removed = 0
-        for frame_index, box_index, target_box in tracklet:
+        for frame_index, box_index, target_box in zip(tracklet.frame_indexes, tracklet.box_indexes, tracklet.boxes):
             boxes = frame_predictions[frame_index]
             boxes.pop(box_index)
+
+            if len(boxes) == 0:
+                boxes_removed += 1
+                continue
 
             label = target_box[5]
             iou_mat = iou_matrix([target_box], boxes)[0]
@@ -146,4 +158,4 @@ def Seq_nms(model, video_path, nms_iou = 0.6):
         print(f"NMS complete - {boxes_removed} boxes removed")
         remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
 
-    return detected_tracklets
+    return TrackletSet(video, detected_tracklets, model.num_to_class)

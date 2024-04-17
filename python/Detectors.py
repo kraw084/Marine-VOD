@@ -53,7 +53,7 @@ class YoloV5ObjectDetector:
 
             row[4] = round(row[4], 2)
 
-        return pred
+        return [box for box in pred]
 
 
 def create_urchin_model(cuda = None):
@@ -81,10 +81,11 @@ if __name__ == "__main__":
     print(f"Number of preds: {len(results)}")
 
     import cv2
-    from Video_utils import annotate_image, resize_image
+    from Video_utils import resize_image
+    from VOD_utils import annotate_image
 
     im = cv2.imread("C:/Users/kelha/Documents/Uni/Summer Research/Urchin-Detector/data/images/im2360606.JPG")
-    annotate_image(im, results, model.num_to_class, model.num_to_color)
+    annotate_image(im, results, model.num_to_class, model.num_to_colour)
     im = resize_image(im, new_width=640)
     cv2.imshow("im", im)
     cv2.waitKey(0)

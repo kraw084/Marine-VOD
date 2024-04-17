@@ -54,80 +54,70 @@ def draw_data(im, data_dict):
 
 class Tracklet:
     def __init__(self, id):
-        self.__boxes = []
-        self.__frame_indexes = []
-        self.__id = id
-        self.__start_frame = None
-        self.__end_frame = -1
+        self.boxes = []
+        self.frame_indexes = []
+        self.id = id
+        self.start_frame = None
+        self.end_frame = -1
 
     def add_box(self, box, frame_index):
-        self.__boxes.append(box)
-        self.__frame_indexes.append(frame_index)
+        self.boxes.append(box)
+        self.frame_indexes.append(frame_index)
 
-        if self.__start_frame is None: self.__start_frame = frame_index
+        if self.start_frame is None: self.start_frame = frame_index
 
-        if frame_index < self.__start_frame: self.__start_frame = frame_index
-        if frame_index > self.__end_frame: self.__end_frame = frame_index
+        if frame_index < self.start_frame: self.start_frame = frame_index
+        if frame_index > self.end_frame: self.end_frame = frame_index
         
     def tracklet_length(self):
-        return len(self.__boxes)
-    
-    def id(self):
-        return self.__id
-    
-    def start_index(self):
-        return self.__start_frame
-    
-    def end_index(self):
-        return self.__end_frame
+        return len(self.boxes)
     
     def __iter__(self):
-        self.__i = 0
+        self.i = 0
         return self
     
     def __next__(self):
-        if self.__i >= len(self.__boxes): raise StopIteration
-        val = (self.__frame_indexes[self.__i], self.__boxes[self.__i])
-        self.__i += 1
+        if self.i >= len(self.boxes): raise StopIteration
+        val = (self.frame_indexes[self.i], self.boxes[self.i])
+        self.i += 1
         return val
 
 
 class TrackletSet:
     def __init__(self, video, tracklets, num_to_label):
-        self.__video = video
-        self.__tracklets = tracklets
-        self.__objects_count = len(self.__tracklets)
+        self.video = video
+        self.tracklets = tracklets
+        self.objects_count = len(self.tracklets)
 
-        self.__num_to_label = num_to_label
-
+        self.num_to_label = num_to_label
 
     def count_per_frame(self):
-        counts = [0] * self.__video.num_of_frames()
-        totals = [0] * self.__video.num_of_frames()
+        counts = [0] * self.video.num_of_frames
+        totals = [0] * self.video.num_of_frames
 
-        for tracklet in self.__tracklets:
-            start_i, end_i = tracklet.start_index(), tracklet.end_index()
-            print(start_i, end_i)
+        for tracklet in self.tracklets:
+            start_i, end_i = tracklet.start_frame, tracklet.end_frame
+
             for i in range(start_i, end_i + 1): counts[i] += 1
-            for i in range(start_i, self.__video.num_of_frames()): totals[i] += 1
+            for i in range(start_i, self.video.num_of_frames): totals[i] += 1
 
         return counts, totals
     
     def play_video(self, fps=None, size=1080):
-        frames = self.__video.frames()
-        counts, totals =  self.count_per_frame()
+        frames = self.video.frames
+        counts, totals = self.count_per_frame()
 
-        for i, tracklet in enumerate(self.__tracklets):
-            id = tracklet.id()
+        for i, tracklet in enumerate(self.tracklets):
+            id = tracklet.id
             colour = colours[i%len(colours)]
             for frame_index, box in tracklet:
-                annotate_image(frames[frame_index], [box], self.__num_to_label, 
-                               [colour] * len(self.__num_to_label), ids=[id])
+                annotate_image(frames[frame_index], [box], self.num_to_label, 
+                               [colour] * len(self.num_to_label), ids=[id])
         
         for i, frame in enumerate(frames):
             draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
                 
-        self.__video.play(fps=fps, resize=size)
+        self.video.play(fps=fps, resize=size)
 
 
 def xywhTOxyxy(x, y, w, h):
