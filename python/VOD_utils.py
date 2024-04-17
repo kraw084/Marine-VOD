@@ -41,6 +41,17 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True
                 im = cv2.putText(im, data[0], data[1], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
 
 
+def draw_data(im, data_dict):
+    thickness = 2
+    font_size = 1.5
+    start_point = (40, 60)
+    gap = 70
+
+    for i, data in enumerate(data_dict):
+        text = f"{data}: {data_dict[data]}"
+        im = cv2.putText(im, text, (start_point[0], start_point[1] + i * gap), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness, cv2.LINE_AA)
+
+
 class Tracklet:
     def __init__(self, id):
         self.__boxes = []
@@ -64,6 +75,12 @@ class Tracklet:
     def id(self):
         return self.__id
     
+    def start_index(self):
+        return self.__start_frame
+    
+    def end_index(self):
+        return self.__end_frame
+    
     def __iter__(self):
         self.__i = 0
         return self
@@ -85,18 +102,20 @@ class TrackletSet:
 
 
     def count_per_frame(self):
-        counts = [0] * len(self.__video.num_of_frames())
-        totals = [0] * len(self.__video.num_of_frames())
+        counts = [0] * self.__video.num_of_frames()
+        totals = [0] * self.__video.num_of_frames()
 
         for tracklet in self.__tracklets:
-            for frame_index, _ in tracklet:
-                counts[frame_index] += 1
-                for i in range(frame_index, len(totals) - 1): totals[i] += 1
+            start_i, end_i = tracklet.start_index(), tracklet.end_index()
+            print(start_i, end_i)
+            for i in range(start_i, end_i + 1): counts[i] += 1
+            for i in range(start_i, self.__video.num_of_frames()): totals[i] += 1
 
         return counts, totals
     
     def play_video(self, fps=None, size=1080):
         frames = self.__video.frames()
+        counts, totals =  self.count_per_frame()
 
         for i, tracklet in enumerate(self.__tracklets):
             id = tracklet.id()
@@ -104,6 +123,9 @@ class TrackletSet:
             for frame_index, box in tracklet:
                 annotate_image(frames[frame_index], [box], self.__num_to_label, 
                                [colour] * len(self.__num_to_label), ids=[id])
+        
+        for i, frame in enumerate(frames):
+            draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
                 
         self.__video.play(fps=fps, resize=size)
 
