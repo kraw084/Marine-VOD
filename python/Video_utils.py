@@ -1,4 +1,5 @@
 import cv2
+import math
 
 def frames_to_video(frames, video_file_path, fps, size):
     """Saves a list of frames as a video"""
@@ -51,16 +52,41 @@ class Video:
     def play(self, resize=1080, fps=None, start_frame=None, end_frame=None):
         if fps is None: fps = self.fps
         delay = round(1000/fps) if fps != 0 else 0
+        first_index = 0 if start_frame is None else start_frame
+        final_index = len(self.frames) - 1 if end_frame is None else end_frame
+        is_paused = False
+        temp_delay = delay
 
-        for i, frame in enumerate(self.frames):
-            if not start_frame is None and i < start_frame: continue
-            if not end_frame is None and i > end_frame: break
-
+        i = first_index
+        while True:
+            frame = self.frames[i]
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             frame = resize_image(frame, new_width=resize) if frame.shape[1] > frame.shape[0] else resize_image(frame, new_height=resize)
             cv2.imshow(self.name, frame)
-            cv2.waitKey(delay)
+            key = cv2.waitKey(temp_delay if not is_paused else 0)
 
+            if key == ord('q'):
+                break
+            elif key == ord(" "):
+                is_paused = not is_paused
+                i -= 1
+            elif key == ord('a'):
+                i = max(first_index, i - 1)
+            elif key == ord('d'):
+                i = min(i + 1, final_index)
+            elif key == ord('w'):
+                i = first_index
+            elif key == ord('s'):
+                i = final_index
+            elif key == ord('z'):
+                temp_delay *= 2
+            elif key == ord('x'):
+                temp_delay = delay
+            elif key == ord('c'):
+                temp_delay = math.ceil(temp_delay/2)
+            else:
+                i = min(i + 1, final_index)
+            
         cv2.destroyAllWindows()
 
     def save(self, video_file_path):

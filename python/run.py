@@ -17,6 +17,7 @@ if __name__ == "__main__":
     for vid_name in os.listdir(urchin_video_folder):
         vid = Video(urchin_video_folder + vid_name)
         print("Finished loading video")
+        vid.play()
 
         #frame_by_frame_VOD(urchin_bot, vid, 0, 1500)
 
