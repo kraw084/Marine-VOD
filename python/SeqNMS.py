@@ -168,7 +168,7 @@ def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
     if not no_save:
         print("Saving result . . .")
         ts.draw_tracklets()
-        count = len([name for name in os.listdir("results") if name[:-3] == f"{ts.video.name}_seqNMS_"])
+        count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{ts.video.name}_seqNMS"])
         ts.video.save(f"results/{ts.video.name}_seqNMS_{count}.mp4")
 
     return ts

@@ -140,7 +140,7 @@ def iou_matrix(boxes1, boxes2):
     return box_iou(boxes1, boxes2).numpy()
 
 
-def frame_by_frame_VOD(model, video, fps=None, resize=1080):
+def frame_by_frame_VOD(model, video, no_save=False):
     frame_predictions = [model.xywhcl(frame) for frame in video]
     print("Finished predicting")
 
@@ -153,4 +153,7 @@ def frame_by_frame_VOD(model, video, fps=None, resize=1080):
         draw_data(frame, {"Objects":count, "Total":total})
 
     print("Finished drawing")
-    video.play(fps=fps, resize=resize)
+    if not no_save:
+        print("Saving result . . .")
+        count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{video.name}_fbf"])
+        video.save(f"results/{video.name}_fbf_{count}.mp4")

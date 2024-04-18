@@ -1,5 +1,6 @@
 import cv2
 import math
+import os
 
 def frames_to_video(frames, video_file_path, fps, size):
     """Saves a list of frames as a video"""
@@ -30,7 +31,10 @@ def resize_image(im, new_width=None, new_height=None):
 
 class Video:
     def __init__(self, video_file_path):
-        self.name = video_file_path
+        self.path = os.path.dirname(video_file_path)
+        self.name = os.path.basename(video_file_path).split(".")[0]
+        self.file_type = video_file_path.split(".")[-1]
+
         self.frames = []
 
         cap = cv2.VideoCapture(video_file_path)
@@ -49,12 +53,12 @@ class Video:
 
         self.num_of_frames = len(self.frames)
 
-    def play(self, resize=1080, fps=None, start_frame=None, end_frame=None):
+    def play(self, resize=1080, fps=None, start_frame=None, end_frame=None, start_paused=False):
         if fps is None: fps = self.fps
         delay = round(1000/fps) if fps != 0 else 0
         first_index = 0 if start_frame is None else start_frame
         final_index = len(self.frames) - 1 if end_frame is None else end_frame
-        is_paused = False
+        is_paused = start_paused
         temp_delay = delay
 
         i = first_index
@@ -62,27 +66,26 @@ class Video:
             frame = self.frames[i]
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             frame = resize_image(frame, new_width=resize) if frame.shape[1] > frame.shape[0] else resize_image(frame, new_height=resize)
-            cv2.imshow(self.name, frame)
+            cv2.imshow(self.name + "." + self.file_type, frame)
             key = cv2.waitKey(temp_delay if not is_paused else 0)
 
-            if key == ord('q'):
+            if key == ord('q'): #close the video
                 break
-            elif key == ord(" "):
+            elif key == ord(" "): #pause
                 is_paused = not is_paused
-                i -= 1
-            elif key == ord('a'):
+            elif key == ord('a'): #previous frame
                 i = max(first_index, i - 1)
-            elif key == ord('d'):
+            elif key == ord('d'): #next frame
                 i = min(i + 1, final_index)
-            elif key == ord('w'):
+            elif key == ord('w'): #restart
                 i = first_index
-            elif key == ord('s'):
+            elif key == ord('s'): #end
                 i = final_index
-            elif key == ord('z'):
+            elif key == ord('z'): #reduce fps
                 temp_delay *= 2
-            elif key == ord('x'):
+            elif key == ord('x'): #resset fps
                 temp_delay = delay
-            elif key == ord('c'):
+            elif key == ord('c'): #increase fps
                 temp_delay = math.ceil(temp_delay/2)
             else:
                 i = min(i + 1, final_index)
