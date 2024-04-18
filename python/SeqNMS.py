@@ -32,7 +32,7 @@ class SeqNmsTracklet(Tracklet):
         conf = self.tracklet_conf(type)
         self.sequence_conf = conf
 
-        for box in self.boxes: box[4] = conf
+        #for box in self.boxes: box[4] = conf
         
 
 def select_sequence(frame_preds, id):
@@ -133,9 +133,11 @@ def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
         #early stopping if scores get low
         if tracklet.sequence_score < 0.8: break
 
+        #only keep tracklets with good average confidence
         tracklet.set_conf("avg")
-        detected_tracklets.append(tracklet)
-        id_counter += 1
+        if tracklet.sequence_conf >= 0.2:
+            detected_tracklets.append(tracklet)
+            id_counter += 1
 
         #Non maximal supression
         boxes_removed = 0
@@ -164,7 +166,7 @@ def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
     ts = TrackletSet(video, detected_tracklets, model.num_to_class)
 
     duration = round((time.time() - start_time)/60, 2)
-    print(f"Finished SeqNMS in {duration}mins ({round(duration/video.num_of_frames), 2}mins per frame)")
+    print(f"Finished SeqNMS in {duration}mins ({round(duration/video.num_of_frames, 4)}mins per frame)")
     if not no_save:
         print("Saving result . . .")
         ts.draw_tracklets()

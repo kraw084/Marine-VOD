@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     urchin_video_folder = "E:/urchin video/All/"
 
+    count = 0
     for vid_name in os.listdir(urchin_video_folder):
         vid = Video(urchin_video_folder + vid_name)
         print("Finished loading video")
@@ -22,6 +23,8 @@ if __name__ == "__main__":
         #vid.play(1500)
 
         seqNMSTracklets = Seq_nms(urchin_bot, vid)
-        seqNMSTracklets.video.play(1500, start_paused=True)
+        #seqNMSTracklets.video.play(1500, start_paused=True)
+        count += 1
+        if count > 5: break
 
-        break
+        
