@@ -72,6 +72,7 @@ class Video:
             video.write(frame)
 
         video.release()
+        print(f"Saved as {video_file_path}")
 
     def __repr__(self):
         return f"Video({self.name})"

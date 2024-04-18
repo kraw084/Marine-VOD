@@ -103,7 +103,7 @@ class TrackletSet:
 
         return counts, totals
     
-    def play_video(self, fps=None, size=1080):
+    def draw_tracklets(self):
         frames = self.video.frames
         counts, totals = self.count_per_frame()
 
@@ -116,8 +116,6 @@ class TrackletSet:
         
         for i, frame in enumerate(frames):
             draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
-                
-        self.video.play(fps=fps, resize=size)
 
 
 def xywhTOxyxy(x, y, w, h):

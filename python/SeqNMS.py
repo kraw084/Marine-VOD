@@ -1,6 +1,8 @@
 from VOD_utils import iou_matrix, Tracklet, TrackletSet
 import numpy as np
 from tqdm import tqdm
+import time
+import os
 
 class SeqNmsTracklet(Tracklet):
     def __init__(self, id):
@@ -107,8 +109,9 @@ def select_sequence(frame_preds, id):
     return tracklet
 
 
-def Seq_nms(model, video, nms_iou = 0.6):
+def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
     """Implements Seq_nms from Han, W. et al (2016)"""
+    start_time = time.time()
     model.update_parameters(conf=0.01, iou=0.8) #update parameters to effectively skip NMS
 
     print(f"Frames: {video.num_of_frames}")
@@ -157,5 +160,19 @@ def Seq_nms(model, video, nms_iou = 0.6):
 
         print(f"NMS complete - {boxes_removed} boxes removed")
         remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
+    
+    ts = TrackletSet(video, detected_tracklets, model.num_to_class)
 
-    return TrackletSet(video, detected_tracklets, model.num_to_class)
+    duration = round((time.time() - start_time)/60, 2)
+    print(f"Finished SeqNMS in {duration}mins ({round(duration/video.num_of_frames), 2}mins per frame)")
+    if not no_save:
+        print("Saving result . . .")
+        ts.draw_tracklets()
+        count = len([name for name in os.listdir("results") if name[:-3] == f"{ts.video.name}_seqNMS_"])
+        ts.video.save(f"results/{ts.video.name}_seqNMS_{count}.mp4")
+
+    return ts
+
+    
+
+
