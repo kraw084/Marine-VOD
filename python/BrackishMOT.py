@@ -50,6 +50,8 @@ def brackishMOT_tracklet(video_number):
     tracklets = {}
 
     for frame, id, x_topleft, y_topleft, width, height, conf, label in lines:
+        if label >= 6: continue
+
         #convert box to correct
         x = x_topleft + width//2
         y = y_topleft + height//2
@@ -154,7 +156,7 @@ def train_brackish_detector():
                         batch_size = 52,
                         #cache = "ram",
                         patience = 50,
-                        resume = "E:/Marine-VOD/yolov5/runs/train/exp2/weights/epoch30.pt"
+                        resume = "E:/Marine-VOD/yolov5/runs/train/exp2/weights/epoch60.pt"
                         )
 
 if __name__ == "__main__":

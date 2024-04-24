@@ -3,4 +3,5 @@ venv/
 python/__pycache__/
 BrackishMOT/
 yolov5s.pt
+yolov5n.pt
 results/*.mp4

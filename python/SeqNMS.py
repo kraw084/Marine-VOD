@@ -109,7 +109,7 @@ def select_sequence(frame_preds, id):
     return tracklet
 
 
-def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
+def Seq_nms(model, video, nms_iou = 0.6, avg_conf_th = 0.2, early_stopping_score_th = 0.8 ,no_save=False):
     """Implements Seq_nms from Han, W. et al (2016)"""
     start_time = time.time()
     model.update_parameters(conf=0.01, iou=0.8) #update parameters to effectively skip NMS
@@ -131,13 +131,17 @@ def Seq_nms(model, video, nms_iou = 0.6, no_save=False):
         tracklet = select_sequence(frame_predictions, id_counter)
 
         #early stopping if scores get low
-        if tracklet.sequence_score < 0.8: break
+        if tracklet.sequence_score < early_stopping_score_th: 
+            print(f"Ending SeqNMS early - best tracklet has score less than {early_stopping_score_th}")
+            break
 
         #only keep tracklets with good average confidence
         tracklet.set_conf("avg")
-        if tracklet.sequence_conf >= 0.2:
+        if tracklet.sequence_conf >= avg_conf_th:
             detected_tracklets.append(tracklet)
             id_counter += 1
+        else:
+            print(f"Sequence avg confidence too low ({tracklet.sequence_conf} < {avg_conf_th}) - rejecting tracklet")
 
         #Non maximal supression
         boxes_removed = 0

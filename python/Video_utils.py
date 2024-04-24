@@ -83,7 +83,7 @@ class Video:
                 i = final_index
             elif key == ord('z'): #reduce fps
                 temp_delay *= 2
-            elif key == ord('x'): #resset fps
+            elif key == ord('x'): #reset fps
                 temp_delay = delay
             elif key == ord('c'): #increase fps
                 temp_delay = math.ceil(temp_delay/2)
