@@ -44,9 +44,9 @@ if __name__ == "__main__":
             #seqNMS_tracklet_set = Seq_nms(brackish_bot, vid, nms_iou=0.4, avg_conf_th=0.2, early_stopping_score_th=0.5, no_save=True)
             #seqNMS_tracklet_set.draw_tracklets()
 
-            ts = frame_skipping(vid, frame_by_frame_VOD_with_tracklets, brackish_bot, 1)
-            #ts.draw_tracklets()
-            #ts.video.play(1200)
+            ts = frame_skipping(vid, Seq_nms, brackish_bot, 10)
+            ts.draw_tracklets()
+            ts.video.play(1200)
 
             break 
 

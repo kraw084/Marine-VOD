@@ -120,6 +120,16 @@ class TrackletSet:
         for i, frame in enumerate(frames):
             draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
 
+    def __iter__(self):
+        self.i = 0
+        return self
+    
+    def __next__(self):
+        if self.i >= len(self.tracklets): raise StopIteration
+        val = self.tracklets[self.i]
+        self.i += 1
+        return val
+
 
 def xywhTOxyxy(x, y, w, h):
     return x - w//2, y - h//2, x + w//2, y + h//2
@@ -141,6 +151,12 @@ def iou_matrix(boxes1, boxes2):
     boxes2 = torch.tensor([xywhTOxyxy(*box2[:4]) for box2 in boxes2])
 
     return box_iou(boxes1, boxes2).numpy()
+
+
+def round_box(box):
+    rounded_box = np.rint(box)
+    rounded_box[4] = box[4]
+    return rounded_box
 
 
 def frame_by_frame_VOD(model, video, no_save=False):
@@ -199,10 +215,8 @@ def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = Tr
     frame_skipped_vid.set_frames(new_frames, math.ceil(full_video.fps/(1 + n)))
     print(f"Reduced from {full_video.num_of_frames} to {len(new_frames)}")
 
-    skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid)
+    skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid, no_save = True)
     new_tracklets = []
-
-    skipped_tracklet_set.play(1200)
 
     print("Interpolating boxes")
     #interpolate boxes over skipped frames
@@ -211,28 +225,32 @@ def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = Tr
         new_boxes = [prev_box]
         new_frame_indices = [kept_frame_indices[skipped_tracklet.start_frame]]
 
-        for box_index in range(len(skipped_tracklet.boxes)):
+        for box_index in range(1, len(skipped_tracklet.boxes)):
             #starting box
-            box = skipped_tracklet[box_index]
+            box = skipped_tracklet.boxes[box_index]
+            frame_index = skipped_tracklet.frame_indexes[box_index]
 
             #for each skipped frame
             for i in range(n):
-                target_unskipped_index = kept_frame_indices[skipped_tracklet.start_frame + box_index] + i + 1
+                target_unskipped_index = kept_frame_indices[frame_index - 1] + i + 1
                 if target_unskipped_index >= full_video.num_of_frames: break
 
                 t = (i + 1)/(n + 1)
                 interpolated_box = prev_box + t * (box - prev_box)
-                interpolated_box[5] = round(interpolated_box[5])
+                interpolated_box = round_box(interpolated_box)
                 new_boxes.append(interpolated_box)
                 new_frame_indices.append(target_unskipped_index)
 
+            new_boxes.append(box)
+            new_frame_indices.append(kept_frame_indices[frame_index])
             prev_box = box
 
         #create new tracklet with interpolated boxes
         unskipped_tracklet = Tracklet(skipped_tracklet.id)
-        for box, frame_i in zip(new_boxes, frame_i):
+        for box, frame_i in zip(new_boxes, new_frame_indices):
             unskipped_tracklet.add_box(box, frame_i)
         
         new_tracklets.append(unskipped_tracklet)
 
+    print("Finish frame skipping reconstruction")
     return TrackletSet(full_video, new_tracklets, model.num_to_class)
