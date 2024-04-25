@@ -30,42 +30,38 @@ def resize_image(im, new_width=None, new_height=None):
 
 
 class Video:
-    def __init__(self, video_file_path):
-        self.path_and_name = video_file_path
+    def __init__(self, video_file_path, init_empty=False):
         self.path = os.path.dirname(video_file_path)
         self.name = os.path.basename(video_file_path).split(".")[0]
         self.file_type = video_file_path.split(".")[-1]
-
         self.frames = []
+        self.size = (0, 0)
+        self.fps = 0
+        self.fourcc = None
+        self.num_of_frames = 0
 
-        cap = cv2.VideoCapture(video_file_path)
-        self.size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #(w, h) of the image
-        self.fps = cap.get(cv2.CAP_PROP_FPS) #frame rate of the video
-        self.fourcc = int(cap.get(cv2.CAP_PROP_FOURCC)) #Fourcc video format code
+        if not init_empty:
+            cap = cv2.VideoCapture(video_file_path)
+            self.size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #(w, h) of the image
+            self.fps = cap.get(cv2.CAP_PROP_FPS) #frame rate of the video
+            self.fourcc = int(cap.get(cv2.CAP_PROP_FOURCC)) #Fourcc video format code
 
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success: break
+            while cap.isOpened():
+                success, frame = cap.read()
+                if not success: break
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.frames.append(frame)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                self.frames.append(frame)
 
-        cap.release()
+            cap.release()
 
-        self.num_of_frames = len(self.frames)
+            self.num_of_frames = len(self.frames)
 
-
-    def __init__(self, file_path, frames, fps, fourcc=None):
-        self.path_and_name = file_path
-        self.path = os.path.dirname(file_path)
-        self.name = os.path.basename(file_path).split(".")[0]
-        self.file_type = file_path.split(".")[-1]
+    def set_frames(self, frames, fps):
         self.frames = frames
-        self.fps = fps
-        self.fourcc = fourcc
         self.size = (frames[0].shape[1], frames[0].shape[0])
+        self.fps = fps
         self.num_of_frames = len(frames)
-
 
     def play(self, resize=1080, fps=None, start_frame=None, end_frame=None, start_paused=False):
         if fps is None: fps = self.fps

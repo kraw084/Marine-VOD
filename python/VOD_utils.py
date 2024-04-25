@@ -162,6 +162,28 @@ def frame_by_frame_VOD(model, video, no_save=False):
         video.save(f"results/{video.name}_fbf_{count}.mp4")
 
 
+def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
+    frame_predictions = [model.xywhcl(frame) for frame in video]
+    print("Finished predicting")
+
+    tracklets = []
+    for i, frame_pred in enumerate(frame_predictions):
+        for box in frame_pred:
+            new_tracklet = Tracklet(i)
+            new_tracklet.add_box(box, i)
+            tracklets.append(new_tracklet)
+
+    ts = TrackletSet(video, tracklets, model.num_to_class)    
+
+    if not no_save:
+        print("Saving result . . .")
+        ts.draw_tracklets()
+        count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{video.name}_fbf"])
+        video.save(f"results/{video.name}_fbf_{count}.mp4")
+
+    return ts
+
+
 def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = True):
     new_frames = []
     kept_frame_indices = []
@@ -170,12 +192,19 @@ def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = Tr
     for i in range(0, full_video.num_of_frames, 1 + n):
         new_frames.append(full_video.frames[i])
         kept_frame_indices.append(i)
+    print("Created new frame set")
 
     #create new video with skipped frame and run VOD
-    frame_skipped_vid = Video(full_video.path_and_name, new_frames, math.ceil(full_video.fps/(1 + n)), full_video.fourcc)
+    frame_skipped_vid = Video(f"{full_video.path}/{full_video.name}_frame_skipped_n.{full_video.file_type}", init_empty=True)
+    frame_skipped_vid.set_frames(new_frames, math.ceil(full_video.fps/(1 + n)))
+    print(f"Reduced from {full_video.num_of_frames} to {len(new_frames)}")
+
     skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid)
     new_tracklets = []
 
+    skipped_tracklet_set.play(1200)
+
+    print("Interpolating boxes")
     #interpolate boxes over skipped frames
     for skipped_tracklet in skipped_tracklet_set:
         prev_box = skipped_tracklet.boxes[0]
@@ -188,11 +217,14 @@ def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = Tr
 
             #for each skipped frame
             for i in range(n):
+                target_unskipped_index = kept_frame_indices[skipped_tracklet.start_frame + box_index] + i + 1
+                if target_unskipped_index >= full_video.num_of_frames: break
+
                 t = (i + 1)/(n + 1)
                 interpolated_box = prev_box + t * (box - prev_box)
                 interpolated_box[5] = round(interpolated_box[5])
                 new_boxes.append(interpolated_box)
-                new_frame_indices.append(kept_frame_indices[skipped_tracklet.start_frame + box_index] + i + 1)
+                new_frame_indices.append(target_unskipped_index)
 
             prev_box = box
 
