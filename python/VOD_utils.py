@@ -4,10 +4,13 @@ import torch
 import cv2
 import numpy as np
 import colorsys
+import math
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
+
+from Video_utils import Video
 
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
@@ -157,3 +160,47 @@ def frame_by_frame_VOD(model, video, no_save=False):
         print("Saving result . . .")
         count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{video.name}_fbf"])
         video.save(f"results/{video.name}_fbf_{count}.mp4")
+
+
+def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = True):
+    new_frames = []
+    kept_frame_indices = []
+
+    #skip every n frames
+    for i in range(0, full_video.num_of_frames, 1 + n):
+        new_frames.append(full_video.frames[i])
+        kept_frame_indices.append(i)
+
+    #create new video with skipped frame and run VOD
+    frame_skipped_vid = Video(full_video.path_and_name, new_frames, math.ceil(full_video.fps/(1 + n)), full_video.fourcc)
+    skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid)
+    new_tracklets = []
+
+    #interpolate boxes over skipped frames
+    for skipped_tracklet in skipped_tracklet_set:
+        prev_box = skipped_tracklet.boxes[0]
+        new_boxes = [prev_box]
+        new_frame_indices = [kept_frame_indices[skipped_tracklet.start_frame]]
+
+        for box_index in range(len(skipped_tracklet.boxes)):
+            #starting box
+            box = skipped_tracklet[box_index]
+
+            #for each skipped frame
+            for i in range(n):
+                t = (i + 1)/(n + 1)
+                interpolated_box = prev_box + t * (box - prev_box)
+                interpolated_box[5] = round(interpolated_box[5])
+                new_boxes.append(interpolated_box)
+                new_frame_indices.append(kept_frame_indices[skipped_tracklet.start_frame + box_index] + i + 1)
+
+            prev_box = box
+
+        #create new tracklet with interpolated boxes
+        unskipped_tracklet = Tracklet(skipped_tracklet.id)
+        for box, frame_i in zip(new_boxes, frame_i):
+            unskipped_tracklet.add_box(box, frame_i)
+        
+        new_tracklets.append(unskipped_tracklet)
+
+    return TrackletSet(full_video, new_tracklets, model.num_to_class)
