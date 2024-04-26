@@ -62,6 +62,7 @@ def create_urchin_model(cuda = None):
                                 [(235, 250,  15), (227, 11, 11)],
                                 cuda=cuda)
 
+
 def create_brackish_model(cuda = None):
     return YoloV5ObjectDetector("models/brackishMOT_botV1.pt",
                                 ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish"],
@@ -70,16 +71,6 @@ def create_brackish_model(cuda = None):
                                 iou = 0.4,
                                 cuda = cuda
                                 )
-
-
-def frame_predictions(model, frames):
-    """Generates predictions on each frame of a video"""
-    predictions = []
-    for frame in frames:
-        pred = model.xywhcl(frame)
-        predictions.append(pred)
-    
-    return predictions
 
 
 if __name__ == "__main__":

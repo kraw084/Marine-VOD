@@ -4,7 +4,6 @@ import os
 import cv2
 import numpy as np
 import configparser
-import shutil
 import random
 import math
 import sys
@@ -19,6 +18,7 @@ NUM_TO_LABEL = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", 
 
 
 def create_bMOT_videos():
+    """Turn the frames from the dataset into .mp4 videos"""
     config = configparser.ConfigParser()
 
     for set in ("train", "test"):
@@ -40,6 +40,7 @@ def create_bMOT_videos():
             
 
 def brackishMOT_tracklet(video_number):
+    """Creates a tracklet set from the ground truth labels of a single video"""
     video_folder_name = f"brackishMOT-{video_number:02}"
     set = "train" if os.path.isdir("BrackishMOT/train/" + video_folder_name) else "test"
     txt = open(f"BrackishMOT/{set}/{video_folder_name}/gt/gt.txt")
@@ -68,13 +69,15 @@ def brackishMOT_tracklet(video_number):
 
 
 def play_brackish_video(video_number):
+    """Plays a brackish video with gt tracklets drawn - used for testing"""
     vid = Video(f"BrackishMOT/videos/brackishMOT-{video_number:02}.mp4")
     tracklets = TrackletSet(vid, brackishMOT_tracklet(video_number), NUM_TO_LABEL)
-
-    tracklets.play_video(30)
+    tracklets.draw_tracklets()
+    tracklets.video.play()
 
 
 def create_yolo_images_and_labels():
+    """Creates the image folder and labels in yoloV5 format"""
     for set in ("train", "test"):
         path = "BrackishMOT/" + set
         video_folders = os.listdir(path)
@@ -111,6 +114,7 @@ def create_yolo_images_and_labels():
 
 
 def train_test_split():
+    """Splits brackish video into train, val and test splits"""
     train = []
     val = []
     test = []

@@ -58,12 +58,14 @@ class Video:
             self.num_of_frames = len(self.frames)
 
     def set_frames(self, frames, fps):
+        """Replaces the frames and fps of a video - use after initialising an empty video"""
         self.frames = frames
         self.size = (frames[0].shape[1], frames[0].shape[0])
         self.fps = fps
         self.num_of_frames = len(frames)
 
     def play(self, resize=1080, fps=None, start_frame=None, end_frame=None, start_paused=False):
+        """Play video with controls"""
         if fps is None: fps = self.fps
         delay = round(1000/fps) if fps != 0 else 0
         first_index = 0 if start_frame is None else start_frame
@@ -103,6 +105,7 @@ class Video:
         cv2.destroyAllWindows()
 
     def save(self, video_file_path):
+        """Save the this video at video_file_path"""
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         video = cv2.VideoWriter(video_file_path, fourcc, self.fps, self.size)
 
@@ -128,6 +131,7 @@ class Video:
     
 
 def stitch_video(left_vid, right_vid, stitched_vid_name=None):
+    """Concatenate two videos horizontally, returns a new video"""
     if left_vid.num_of_frames != right_vid.num_of_frames:
         raise ValueError(f"Left video has {left_vid.num_of_frames} while right video has {right_vid.num_of_frames}")
     if left_vid.size != right_vid.size:

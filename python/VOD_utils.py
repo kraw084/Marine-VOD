@@ -17,34 +17,35 @@ colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_
 colours = [(round(255 * c[0]), round(255 * c[1]), round(255 * c[2])) for c in colours]
 
 def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True, ids=None):
-        """Draws xywhcl boxes onto a single image. Colours are BGR"""
-        thickness = 3
-        font_size = 1
+    """Draws a list xywhcl boxes onto a single image"""
+    thickness = 3
+    font_size = 1
 
-        label_data = []
-        for i, pred in enumerate(prediction):
-            top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
-            bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
-            label = num_to_label[int(pred[5])]
+    label_data = []
+    for i, pred in enumerate(prediction):
+        top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
+        bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
+        label = num_to_label[int(pred[5])]
 
-            colour = num_to_colour[int(pred[5])]
+        colour = num_to_colour[int(pred[5])]
 
-            #Draw boudning box
-            im = cv2.rectangle(im, top_left, bottom_right, colour, thickness)
+        #Draw boudning box
+        im = cv2.rectangle(im, top_left, bottom_right, colour, thickness)
 
-            label_data.append((f"{f'{ids[i]}. ' if ids else ''}{label} - {float(pred[4]):.2f}", top_left, colour))
-        
-        #Draw text over boxes
-        if draw_labels:
-            for data in label_data:
-                text_size = cv2.getTextSize(data[0], cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
-                text_box_top_left = (data[1][0], data[1][1] - text_size[1])
-                text_box_bottom_right = (data[1][0] + text_size[0], data[1][1])
-                im = cv2.rectangle(im, text_box_top_left, text_box_bottom_right, data[2], -1)
-                im = cv2.putText(im, data[0], data[1], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
+        label_data.append((f"{f'{ids[i]}. ' if ids else ''}{label} - {float(pred[4]):.2f}", top_left, colour))
+    
+    #Draw text over boxes
+    if draw_labels:
+        for data in label_data:
+            text_size = cv2.getTextSize(data[0], cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
+            text_box_top_left = (data[1][0], data[1][1] - text_size[1])
+            text_box_bottom_right = (data[1][0] + text_size[0], data[1][1])
+            im = cv2.rectangle(im, text_box_top_left, text_box_bottom_right, data[2], -1)
+            im = cv2.putText(im, data[0], data[1], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
 
 
 def draw_data(im, data_dict):
+    """Draws key and dict item in top left corner of an image"""
     thickness = 2
     font_size = 1.5
     start_point = (40, 60)
@@ -95,6 +96,7 @@ class TrackletSet:
         self.num_to_label = num_to_label
 
     def count_per_frame(self):
+        """Creates two lists where counts[i] and totals[i] is the number of objects and the total number of objects seen at frame i"""
         counts = [0] * self.video.num_of_frames
         totals = [0] * self.video.num_of_frames
 
@@ -107,6 +109,7 @@ class TrackletSet:
         return counts, totals
     
     def draw_tracklets(self):
+        """Draws all tracklets and counts/totals on the video, randomizes colours"""
         frames = self.video.frames
         counts, totals = self.count_per_frame()
 
@@ -132,6 +135,7 @@ class TrackletSet:
 
 
 def xywhTOxyxy(x, y, w, h):
+    """Converts an xywh box to xyxy"""
     return x - w//2, y - h//2, x + w//2, y + h//2
 
 
@@ -154,12 +158,14 @@ def iou_matrix(boxes1, boxes2):
 
 
 def round_box(box):
+    """rounds all values of a box (xywhcl) to the nearest integer (except confidence)"""
     rounded_box = np.rint(box)
     rounded_box[4] = box[4]
     return rounded_box
 
 
 def frame_by_frame_VOD(model, video, no_save=False):
+    """Perfoms VOD by running the detector on each frame independently"""
     frame_predictions = [model.xywhcl(frame) for frame in video]
     print("Finished predicting")
 
@@ -179,6 +185,7 @@ def frame_by_frame_VOD(model, video, no_save=False):
 
 
 def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
+    """Same as fbf_VOD but returns results as a TrackletSet rather than directly drawing on the video"""
     frame_predictions = [model.xywhcl(frame) for frame in video]
     print("Finished predicting")
 
@@ -201,6 +208,16 @@ def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
 
 
 def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
+    """Used to speed up VOD methods by skipping frames. Boxes are interpolated to fit the orignal video.
+        arguments:
+            full_video: the full length video to perfom VOD on
+            vod_method: the VOD function to be used
+            model: single image detector to be passed to vod_method
+            n: number of frames to skip over
+            **vod_kwargs: key word args to pass to vod_method
+        returns:
+            TrackletSet of interpolated boxes"""
+    
     new_frames = []
     kept_frame_indices = []
 

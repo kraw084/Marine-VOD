@@ -4,7 +4,12 @@ from tqdm import tqdm
 import time
 import os
 
+"""Han, W., Khorrami, P., Paine, T. L., Ramachandran, P., Babaeizadeh, M., Shi, H., ... & Huang, T. S. (2016). 
+   Seq-nms for video object detection. arXiv preprint arXiv:1602.08465.
+   """
+
 class SeqNmsTracklet(Tracklet):
+    """Tracklet subclass for use with seqNMS. Keeps track of box indicies and sequence score and confidences"""
     def __init__(self, id):
         super().__init__(id)
         self.box_indexes = []
@@ -22,20 +27,24 @@ class SeqNmsTracklet(Tracklet):
         if frame_index > self.end_frame: self.end_frame = frame_index
 
     def tracklet_conf(self, type):
+        """Calculates tracklet confidence"""
         conf_values = [box[4] for box in self.boxes]
         if type == "avg":
             return sum(conf_values)/len(conf_values)
         if type == "max":
             return max(conf_values)
         
-    def set_conf(self, type):
+    def set_conf(self, type, update_boxes=False):
+        """Calculates and sets the tracklet confidence, optionally update box conf for drawing"""
         conf = self.tracklet_conf(type)
         self.sequence_conf = conf
 
-        #for box in self.boxes: box[4] = conf
+        if update_boxes: 
+            for box in self.boxes: box[4] = conf
         
 
 def select_sequence(frame_preds, id):
+    """Selects the sequence of linked boxes with the highest confidence sum using a dynamic programming algorithm"""
     best_score = 0
     best_sequence = []
 
