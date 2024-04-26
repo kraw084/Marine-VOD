@@ -125,3 +125,20 @@ class Video:
         frame = self.frames[self.i]
         self.i += 1
         return frame
+    
+
+def stitch_video(left_vid, right_vid, stitched_vid_name=None):
+    if left_vid.num_of_frames != right_vid.num_of_frames:
+        raise ValueError(f"Left video has {left_vid.num_of_frames} while right video has {right_vid.num_of_frames}")
+    if left_vid.size != right_vid.size:
+        raise ValueError(f"Left video has shape {left_vid.size} while right vid has shape {right_vid.size}")
+    
+    new_frames = []
+    for left_frame, right_frame in zip(left_vid, right_vid):
+        new_frames.append(cv2.hconcat([left_frame, right_frame]))
+
+    if stitched_vid_name is None: stitched_vid_name = "Stitched_vid.mp4"
+    new_vid = Video(stitched_vid_name, True)
+    new_vid.set_frames(new_frames, left_vid.fps)
+    
+    return new_vid

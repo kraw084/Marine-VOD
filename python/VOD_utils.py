@@ -200,7 +200,7 @@ def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
     return ts
 
 
-def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = True):
+def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
     new_frames = []
     kept_frame_indices = []
 
@@ -215,7 +215,7 @@ def frame_skipping(full_video, vod_method, model, n=1, extend_over_last_gap = Tr
     frame_skipped_vid.set_frames(new_frames, math.ceil(full_video.fps/(1 + n)))
     print(f"Reduced from {full_video.num_of_frames} to {len(new_frames)}")
 
-    skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid, no_save = True)
+    skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid, no_save = True, **vod_kwargs)
     new_tracklets = []
 
     print("Interpolating boxes")
