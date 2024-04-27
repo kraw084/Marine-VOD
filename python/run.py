@@ -35,6 +35,10 @@ if __name__ == "__main__":
         brackish_bot = create_brackish_model(cuda)
         brackish_video_folder = "d:/Marine-VOD/BrackishMOT/videos/"
         for vid_name in os.listdir(brackish_video_folder):
+            if count < 1:
+                count += 1
+                continue
+
             #get ground truth tracklets
             vid = Video(brackish_video_folder + vid_name)
             vid_num = int(vid.name[-2:])

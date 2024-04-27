@@ -292,6 +292,8 @@ def correct_preds(gt, preds, iou=0.5):
     preds = np.array(preds)
     correct = np.zeros((preds.shape[0],)).astype(bool)
 
+    if gt.shape[0] == 0 or preds.shape[0] == 0: return correct, None
+
     iou_mat = iou_matrix(gt, preds)
     correct_label = gt[:, 5:6] == preds[:, 5].T
 
@@ -348,7 +350,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
         fp += correct.shape[0] - num_correct
         fn += len(gt_boxes_by_frame[i]) - num_correct
 
-        if return_correct_ids:
+        if return_correct_ids and (not matches is None):
             for gt_index, pred_index in matches:
                 gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
                 pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))
