@@ -109,14 +109,18 @@ class TrackletSet:
 
         return counts, totals
     
-    def draw_tracklets(self):
+    def draw_tracklets(self, correct_id = None):
         """Draws all tracklets and counts/totals on the video, randomizes colours"""
         frames = self.video.frames
         counts, totals = self.count_per_frame()
 
         for i, tracklet in enumerate(self.tracklets):
             id = tracklet.id
-            colour = colours[i%len(colours)]
+            if not correct_id is None:
+                colour = (19, 235, 76) if id in correct_id else (232, 42, 21)
+            else:
+                colour = colours[i%len(colours)]
+
             for frame_index, box in tracklet:
                 annotate_image(frames[frame_index], [box], self.num_to_label, 
                                [colour] * len(self.num_to_label), ids=[id])
@@ -301,8 +305,32 @@ def correct_preds(gt, preds, iou=0.5):
     return correct, match_indices
 
 
-def metrics(gt_tracklets, pred_tracklets):
-    tp = 0
-    fp = 0
-    fn = 0
-    pass
+def metrics(gt_tracklets, pred_tracklets, num_of_frames):
+    tp, fp, fn = 0, 0 ,0
+
+    #get boxes for each frame
+    gt_boxes_by_frame = [[]] * num_of_frames
+    preds_by_frame = [[]] * num_of_frames
+
+    for gt_track in gt_tracklets:
+        for frame_index, box in gt_track:
+            gt_boxes_by_frame[frame_index].append(box)
+
+    for pred_track in pred_tracklets:
+        for frame_index, box in pred_track:
+            preds_by_frame[frame_index].append(box)
+
+    #calculate frame independent metrics
+    for i in range(num_of_frames):
+        correct = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])[0]
+        num_correct = np.sum(correct)
+
+        tp += num_correct
+        fp += correct.shape[0] - num_correct
+        fn += len(gt_boxes_by_frame[i]) - num_correct
+
+    p = tp / (tp + fp)
+    r = tp / (tp + fn)
+
+    return p, r
+    
