@@ -9,6 +9,7 @@ import math
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
+from yolov5.val import process_batch
 
 from Video_utils import Video
 
@@ -271,3 +272,37 @@ def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
 
     print("Finish frame skipping reconstruction")
     return TrackletSet(full_video, new_tracklets, model.num_to_class)
+
+
+def correct_preds(gt, preds, iou=0.5):
+    """Determines which predictions are correct and returns the matching
+        Arguments:
+            gt: list of ground truth np.array boxes in the form xywhcl
+            preds: list of predicted np.array boxes in the form xywhcl
+        Returns:
+            correct: array of len(preds) where the ith element is true if pred[i] has a match
+            match_indices: Nx2 array of box index matchings (gt box, pred box)"""
+    gt = np.array(gt)
+    preds = np.array(preds)
+    correct = np.zeros((preds.shape[0],)).astype(bool)
+
+    iou_mat = iou_matrix(gt, preds)
+    correct_label = gt[:, 5:6] == preds[:, 5].T
+
+    match_indices = np.argwhere((iou_mat >= iou) & correct_label)
+    if match_indices.shape[0]:
+        iou_of_matches = iou_mat[match_indices[:, 0], match_indices[:, 1]]
+        match_indices = match_indices[iou_of_matches.argsort()[::-1]]
+        match_indices = match_indices[np.unique(match_indices[:, 1], return_index=True)[1]]
+        match_indices = match_indices[np.unique(match_indices[:, 0], return_index=True)[1]]
+
+        correct[match_indices[:, 1]] = True
+
+    return correct, match_indices
+
+
+def metrics(gt_tracklets, pred_tracklets):
+    tp = 0
+    fp = 0
+    fn = 0
+    pass
