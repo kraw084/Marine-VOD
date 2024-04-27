@@ -116,12 +116,12 @@ class TrackletSet:
 
         for i, tracklet in enumerate(self.tracklets):
             id = tracklet.id
-            if not correct_id is None:
-                colour = (19, 235, 76) if id in correct_id else (232, 42, 21)
-            else:
-                colour = colours[i%len(colours)]
+            colour = colours[i%len(colours)]
 
             for frame_index, box in tracklet:
+                if not correct_id is None:
+                    colour = (19, 235, 76) if (frame_index, id) in correct_id else (232, 42, 21)
+
                 annotate_image(frames[frame_index], [box], self.num_to_label, 
                                [colour] * len(self.num_to_label), ids=[id])
         
@@ -195,11 +195,13 @@ def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
     print("Finished predicting")
 
     tracklets = []
+    id_counter = 0
     for i, frame_pred in enumerate(frame_predictions):
         for box in frame_pred:
-            new_tracklet = Tracklet(i)
+            new_tracklet = Tracklet(id_counter)
             new_tracklet.add_box(box, i)
             tracklets.append(new_tracklet)
+            id_counter += 1
 
     ts = TrackletSet(video, tracklets, model.num_to_class)    
 
@@ -305,32 +307,55 @@ def correct_preds(gt, preds, iou=0.5):
     return correct, match_indices
 
 
-def metrics(gt_tracklets, pred_tracklets, num_of_frames):
-    tp, fp, fn = 0, 0 ,0
+def trackletSet_frame_by_frame(tracklets):
+    """Seperates a tracklet set into a list of boxes and ids for each frame"""
+    boxes_by_frame = [[] for i in range(tracklets.video.num_of_frames)] 
+    ids_by_frame = [[] for i in range(tracklets.video.num_of_frames)] 
+
+    for track in tracklets:
+        for frame_index, box in track:
+            boxes_by_frame[frame_index].append(box)
+            ids_by_frame[frame_index].append(track.id)
+
+    return boxes_by_frame, ids_by_frame
+
+
+def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False):
+    """Calculates multiple metrics using a set of ground truth tracklets
+        Arguments:
+            gt_tracklets: tracklet set representing the true labels
+            pred_tracklets: tracklet set from any VOD method
+            return_correct_ids: if true retruns two lists of items of the form (frame_index, tracklet_id) for correct preds
+        Returns:
+            p: precision
+            r: recall"""
+    tp, fp, fn = 0, 0 , 0
+    gt_correct_ids, pred_correct_ids = [], []
 
     #get boxes for each frame
-    gt_boxes_by_frame = [[]] * num_of_frames
-    preds_by_frame = [[]] * num_of_frames
+    gt_boxes_by_frame, gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
+    preds_by_frame, pred_ids_by_frame = trackletSet_frame_by_frame(pred_tracklets)
 
-    for gt_track in gt_tracklets:
-        for frame_index, box in gt_track:
-            gt_boxes_by_frame[frame_index].append(box)
-
-    for pred_track in pred_tracklets:
-        for frame_index, box in pred_track:
-            preds_by_frame[frame_index].append(box)
+    if len(gt_boxes_by_frame) != len(preds_by_frame):
+        raise ValueError("Tracklet set videos have a different number of frames")
 
     #calculate frame independent metrics
-    for i in range(num_of_frames):
-        correct = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])[0]
+    for i in range(len(gt_boxes_by_frame)):
+        correct, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])
         num_correct = np.sum(correct)
 
         tp += num_correct
         fp += correct.shape[0] - num_correct
         fn += len(gt_boxes_by_frame[i]) - num_correct
 
+        if return_correct_ids:
+            for gt_index, pred_index in matches:
+                gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
+                pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))
+
     p = tp / (tp + fp)
     r = tp / (tp + fn)
 
+    if return_correct_ids: return p, r, gt_correct_ids, pred_correct_ids
     return p, r
     
