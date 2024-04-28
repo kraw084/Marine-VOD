@@ -55,10 +55,9 @@ if __name__ == "__main__":
             #seqNMS_tracklet_set = frame_skipping(vid2, Seq_nms, brackish_bot, 1, nms_iou=0.4, avg_conf_th=0.3, early_stopping_score_th=0.5)
             #seqNMS_tracklet_set.draw_tracklets()
 
-            print("--------------------------------------------------")
-            p, r, mota, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, fbf_tracklets, True)
-            print("--------------------------------------------------")
-            print(f"P = {p}, R = {r}, MOTA = {mota}")
+            p, r, mota, motp, mt, pt, ml, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, fbf_tracklets, True)
+            print(f"P = {p}, R = {r}, MOTA = {mota}, MOTP = {motp}")
+            print(f"MT = {mt}, PT = {pt}, ML = {ml}")
 
             gt_tracklets.draw_tracklets(gt_ids)
             fbf_tracklets.draw_tracklets(pred_ids)

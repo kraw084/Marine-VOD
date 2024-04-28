@@ -331,8 +331,9 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
         Returns:
             p: precision
             r: recall"""
-    tp, fp, fn, id_switches = 0, 0, 0, 0
+    tp, fp, fn, id_switches, dist, total_matches = 0, 0, 0, 0, 0, 0
     gt_correct_ids, pred_correct_ids = [], []
+    gt_detection_lifetimes = {gt_track.id:0 for gt_track in gt_tracklets}
 
     #get boxes for each frame
     gt_boxes_by_frame, gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
@@ -363,9 +364,14 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
                     #tracklet has been matched before
                     if corresponding_id[gt_tracklet_id] != pred_tracklet_id:
                         #id switch has occured
-                        print(f"frame: {i} - id switch: gt {gt_index}, original match {corresponding_id[gt_tracklet_id]}, new match {pred_tracklet_id}")
+                        #print(f"frame: {i} - id switch: gt {gt_index}, original match {corresponding_id[gt_tracklet_id]}, new match {pred_tracklet_id}")
                         id_switches += 1
                         corresponding_id[gt_tracklet_id] = pred_tracklet_id
+
+                dist += 1 - iou(gt_boxes_by_frame[i][gt_index], preds_by_frame[i][pred_index])
+                total_matches += 1
+
+                gt_detection_lifetimes[gt_tracklet_id] += 1
 
                 #get ids of matched gts and preds for colouring later
                 if return_correct_ids:
@@ -375,7 +381,23 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
     p = tp / (tp + fp)
     r = tp / (tp + fn)
     mota = 1 - ((fn + fp + id_switches)/sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame]))
+    motp = dist / total_matches
 
-    if return_correct_ids: return p, r, mota, gt_correct_ids, pred_correct_ids
-    return p, r, mota
+    #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
+    gt_detection_lifetimes = [gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in gt_tracklets]
+    mt, pt, ml = 0, 0, 0
+    for duration in gt_detection_lifetimes:
+        if duration >= 0.8:
+            mt += 1
+        elif duration <= 0.2:
+            ml += 1
+        else:
+            pt += 1
+
+    mt /= len(gt_detection_lifetimes)
+    pt /= len(gt_detection_lifetimes)
+    ml /= len(gt_detection_lifetimes)
+
+    if return_correct_ids: return p, r, mota, motp, mt, pt, ml, gt_correct_ids, pred_correct_ids
+    return p, r, mota, motp, mt, pt, ml
     
