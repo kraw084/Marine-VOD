@@ -331,7 +331,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
         Returns:
             p: precision
             r: recall"""
-    tp, fp, fn = 0, 0 , 0
+    tp, fp, fn, id_switches = 0, 0, 0, 0
     gt_correct_ids, pred_correct_ids = [], []
 
     #get boxes for each frame
@@ -341,7 +341,8 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
     if len(gt_boxes_by_frame) != len(preds_by_frame):
         raise ValueError("Tracklet set videos have a different number of frames")
 
-    #calculate frame independent metrics
+    #calculate metrics
+    corresponding_id = {}
     for i in range(len(gt_boxes_by_frame)):
         correct, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])
         num_correct = np.sum(correct)
@@ -350,14 +351,31 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
         fp += correct.shape[0] - num_correct
         fn += len(gt_boxes_by_frame[i]) - num_correct
 
-        if return_correct_ids and (not matches is None):
+        if not matches is None:
             for gt_index, pred_index in matches:
-                gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
-                pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))
+                gt_tracklet_id = gt_ids_by_frame[i][gt_index]
+                pred_tracklet_id = pred_ids_by_frame[i][pred_index]
+
+                if not gt_tracklet_id in corresponding_id:
+                    #first time tracklet has a match
+                    corresponding_id[gt_tracklet_id] = pred_tracklet_id
+                else:
+                    #tracklet has been matched before
+                    if corresponding_id[gt_tracklet_id] != pred_tracklet_id:
+                        #id switch has occured
+                        print(f"frame: {i} - id switch: gt {gt_index}, original match {corresponding_id[gt_tracklet_id]}, new match {pred_tracklet_id}")
+                        id_switches += 1
+                        corresponding_id[gt_tracklet_id] = pred_tracklet_id
+
+                #get ids of matched gts and preds for colouring later
+                if return_correct_ids:
+                    gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
+                    pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))  
 
     p = tp / (tp + fp)
     r = tp / (tp + fn)
+    mota = 1 - ((fn + fp + id_switches)/sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame]))
 
-    if return_correct_ids: return p, r, gt_correct_ids, pred_correct_ids
-    return p, r
+    if return_correct_ids: return p, r, mota, gt_correct_ids, pred_correct_ids
+    return p, r, mota
     

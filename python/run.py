@@ -35,9 +35,9 @@ if __name__ == "__main__":
         brackish_bot = create_brackish_model(cuda)
         brackish_video_folder = "d:/Marine-VOD/BrackishMOT/videos/"
         for vid_name in os.listdir(brackish_video_folder):
-            if count < 1:
-                count += 1
-                continue
+            #if count < 1:
+            #    count += 1
+            #    continue
 
             #get ground truth tracklets
             vid = Video(brackish_video_folder + vid_name)
@@ -46,20 +46,22 @@ if __name__ == "__main__":
             #gt_tracklets.draw_tracklets()
 
             #get fbf tracklets
-            #vid2 = Video(brackish_video_folder + vid_name)
-            #fbf_tracklets = frame_by_frame_VOD_with_tracklets(brackish_bot, vid2, True)
-            #fbf_tracklets.draw_tracklets()
+            vid2 = Video(brackish_video_folder + vid_name)
+            fbf_tracklets = frame_by_frame_VOD_with_tracklets(brackish_bot, vid2, True)
+            fbf_tracklets.draw_tracklets()
 
             #get seqNMS tracklets
-            vid2 = Video(brackish_video_folder + vid_name)
-            seqNMS_tracklet_set = frame_skipping(vid2, Seq_nms, brackish_bot, 1, nms_iou=0.4, avg_conf_th=0.2, early_stopping_score_th=0.5)
+            #vid2 = Video(brackish_video_folder + vid_name)
+            #seqNMS_tracklet_set = frame_skipping(vid2, Seq_nms, brackish_bot, 1, nms_iou=0.4, avg_conf_th=0.3, early_stopping_score_th=0.5)
             #seqNMS_tracklet_set.draw_tracklets()
 
-            p, r, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, seqNMS_tracklet_set, True)
-            print(f"P = {p}, R = {r}")
+            print("--------------------------------------------------")
+            p, r, mota, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, fbf_tracklets, True)
+            print("--------------------------------------------------")
+            print(f"P = {p}, R = {r}, MOTA = {mota}")
 
             gt_tracklets.draw_tracklets(gt_ids)
-            seqNMS_tracklet_set.draw_tracklets(pred_ids)
+            fbf_tracklets.draw_tracklets(pred_ids)
 
             combined_vid = stitch_video(vid, vid2, f"gt_fbf_{vid_name}")
             combined_vid.play(1600, start_paused=True)        
