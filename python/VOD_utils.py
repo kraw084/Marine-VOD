@@ -322,15 +322,15 @@ def trackletSet_frame_by_frame(tracklets):
     return boxes_by_frame, ids_by_frame
 
 
-def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False):
+def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False, return_components = False):
     """Calculates multiple metrics using a set of ground truth tracklets
         Arguments:
             gt_tracklets: tracklet set representing the true labels
             pred_tracklets: tracklet set from any VOD method
             return_correct_ids: if true retruns two lists of items of the form (frame_index, tracklet_id) for correct preds
         Returns:
-            p: precision
-            r: recall"""
+            precision, recall, multi-object tracking accuray, multi-object tracking precision, 
+            mostly tracked, partially tracked, mostly lost"""
     tp, fp, fn, id_switches, dist, total_matches = 0, 0, 0, 0, 0, 0
     gt_correct_ids, pred_correct_ids = [], []
     gt_detection_lifetimes = {gt_track.id:0 for gt_track in gt_tracklets}
@@ -342,7 +342,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
     if len(gt_boxes_by_frame) != len(preds_by_frame):
         raise ValueError("Tracklet set videos have a different number of frames")
 
-    #calculate metrics
+    #Loop over predictions in each frame to get the components of each metric
     corresponding_id = {}
     for i in range(len(gt_boxes_by_frame)):
         correct, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])
@@ -378,9 +378,14 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
                     gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
                     pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))  
 
+
+    #calculate metrics from equations
     p = tp / (tp + fp)
     r = tp / (tp + fn)
-    mota = 1 - ((fn + fp + id_switches)/sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame]))
+
+    gt_total = sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame])
+    mota = 1 - ((fn + fp + id_switches)/gt_total)
+
     motp = dist / total_matches
 
     #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
@@ -394,6 +399,8 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
         else:
             pt += 1
 
+    if return_components: return tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml
+
     mt /= len(gt_detection_lifetimes)
     pt /= len(gt_detection_lifetimes)
     ml /= len(gt_detection_lifetimes)
@@ -401,3 +408,21 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False)
     if return_correct_ids: return p, r, mota, motp, mt, pt, ml, gt_correct_ids, pred_correct_ids
     return p, r, mota, motp, mt, pt, ml
     
+
+def mutiple_vid_metrics(gt_tracklet_sets, pred_tracklet_sets):
+    """Computes the metrics over a set of videos"""
+    #tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml
+    components = np.zeros((10,))
+
+    for gt_tracklet_set, pred_tracklet_set in zip(gt_tracklet_sets, pred_tracklet_sets):
+        components +=  np.array(*[single_vid_metrics(gt_tracklet_set, pred_tracklet_set, False, True)])
+
+    p = components[0]/(components[0] + components[1])
+    r = components[0]/(components[0] + components[2])
+    mota = 1 - ((components[1] + components[2] + components[3])/components[4])
+    motp = components[5]/components[6]
+    mt = components[7]/(components[7] + components[8] + components[9])
+    pt = components[8]/(components[7] + components[8] + components[9])   
+    ml = components[9]/(components[7] + components[8] + components[9])
+
+    return p, r, mota, motp, mt, pt, ml
