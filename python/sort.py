@@ -1,8 +1,11 @@
 import numpy as np
 import math
 from filterpy.kalman import KalmanFilter
+import time
+import tqdm
+from scipy.optimize import linear_sum_assignment
 
-from VOD_utils import Tracklet
+from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD
 
 def box_to_state(box):
     """Takes a box [x, y, w, h] and converts to to the kalman state [x, y, s, r]"""
@@ -74,7 +77,7 @@ class SortTracklet(Tracklet):
         super().__init__(id)
         self.kf_tracker = KalmanTracker(initial_box)
         self.miss_streak = 0
-        self.probation_timer = 0
+        self.hits = 1
 
         self.add_box(initial_box, initial_frame_index)
 
@@ -86,3 +89,74 @@ class SortTracklet(Tracklet):
     
     def kalman_update(self, measurement):
         return self.kf_tracker.update(measurement)
+    
+
+def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = True):
+    start_time = time.time()
+    active_tracklets = []
+    deceased_tracklets = []
+    id_counter = 0
+
+    print("Starting SORT")
+    for i, frame in tqdm(enumerate(video), bar_format="{l_bar}{bar:30}{r_bar}"):
+        frame_pred = model.xywhcl(frame)
+        tracklet_predictions = [t.predict() for t in active_tracklets]
+
+        tracklet_indices, detection_indices = [], []
+        if len(tracklet_predictions) == 0: unassigned_det_indices = [j for j in range(len(frame_pred))]
+        if len(frame_pred) == 0: unassigned_track_indices = [j for j in range(len(active_tracklets))]
+
+        if len(tracklet_predictions) != 0 or len(frame_pred) != 0:
+            #determine tracklet kf pred and model pred matching using optimal linear sum assignment
+            iou_mat = iou_matrix(tracklet_predictions, frame_pred)
+            tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
+            unassigned_det_indices = [j for j in range(len(active_tracklets)) if j not in tracklet_indices]
+            unassigned_track_indices = [j for j in range(len(frame_pred)) if j not in detection_indices]
+
+            for track_i, detect_i in zip(tracklet_indices, detection_indices):
+                iou = iou_mat[track_i][detect_i]
+                assigned_tracklet = active_tracklets[track_i]
+                assigned_det = frame_pred[detect_i]
+
+                if iou >= iou_min:
+                    #successful match, update kf preds with det measurements
+                    updated_kf_box = assigned_tracklet.update(assigned_det)
+                    assigned_tracklet.add_box(updated_kf_box, i)
+                    assigned_tracklet.miss_streak = 0
+                    assigned_tracklet.hits += 1
+                else:
+                    #match is not successful, unassign tracklet and detection
+                    unassigned_det_indices.append(detect_i)
+                    unassigned_track_indices.append(track_i)
+        
+        #tracklet had no match, update with just kf pred
+        for track_i in unassigned_track_indices:
+            track = active_tracklets[track_i]
+            track.add_box(tracklet_predictions[track_i], i)
+            track.miss_streak += 1
+
+        #detection had no match, create new tracklet
+        for det_i in unassigned_det_indices:
+            new_tracket = SortTracklet(id_counter, frame_pred[det_i], i)
+            id_counter += 1
+            active_tracklets.append(new_tracket)
+
+        #clean up dead tracklets
+        for track_i in range(len(active_tracklets) - 1, -1, -1):
+            track = active_tracklets[track_i]
+            if track.miss_streak >= t_lost:
+                deceased_tracklets.append(track)
+                active_tracklets.pop(track_i)
+
+    #remove tracklets that did not meet the requirement minimum number of hits
+    combined_tracklets = deceased_tracklets + active_tracklets
+    for track_i in range(len(combined_tracklets)):
+        if combined_tracklets[track_i].hits < min_hits:
+            combined_tracklets.pop(track_i)
+
+    ts = TrackletSet(video, combined_tracklets, model.num_to_class)
+    
+    duration = round((time.time() - start_time)/60, 2)
+    print(f"Finished SORT in {duration}mins")
+    if not no_save: save_VOD(ts, "SORT")
+    return ts
