@@ -64,13 +64,16 @@ def create_urchin_model(cuda = None):
 
 
 def create_brackish_model(cuda = None):
-    return YoloV5ObjectDetector("models/brackishMOT_botV1.pt",
+    bot = YoloV5ObjectDetector("models/brackishMOT_botV1.pt",
                                 ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish"],
                                 [(212, 70, 200), (29, 32, 224), (224, 112, 20), (231, 235, 19), (204, 16, 16), (48, 219, 29)],
                                 conf = 0.2,
-                                iou = 0.4,
+                                iou = 0.3,
                                 cuda = cuda
                                 )
+    
+    bot.model.agnostic = True
+    return bot
 
 
 if __name__ == "__main__":

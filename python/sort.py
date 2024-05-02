@@ -65,6 +65,9 @@ class KalmanTracker():
 
     
     def predict(self):
+        #if scale velocity would make scale negative, set scale velocity to 0
+        if self.kf.x[2] + self.kf.x[6] <= 0: self.kf.x[6] = 0
+
         self.kf.predict()
         predicted_state = self.kf.x
 
@@ -88,13 +91,13 @@ class SortTracklet(Tracklet):
 
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
-        conf = -1 #self.boxes[-1][4]
+        conf = self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*predicted_box, conf, label])
     
     def kalman_update(self, measurement):
         updated_box = self.kf_tracker.update(measurement)
-        conf = -2 #self.boxes[-1][4]
+        conf = self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*updated_box, conf, label])
     

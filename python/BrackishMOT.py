@@ -151,6 +151,18 @@ def train_test_split():
         f.close()
 
 
+def id_by_set(data_set = "test"):
+    f = open(f"BrackishMOT/{data_set}.txt")
+    lines = f.readlines()
+    f.close()
+
+    ids = set()
+    for line in lines:
+        id = int(line.split("vid")[1][:2])
+        ids.add(id)
+
+    return list(ids)
+
 def train_brackish_detector():
     yolov5.train.run(imgsz = 640, 
                         epochs = 200, 
