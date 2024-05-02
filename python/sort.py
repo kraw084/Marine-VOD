@@ -2,10 +2,15 @@ import numpy as np
 import math
 from filterpy.kalman import KalmanFilter
 import time
-import tqdm
+from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
 
 from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD
+
+"""Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
+   Simple online and realtime tracking. In 2016 IEEE international conference on image processing
+   (ICIP) (pp. 3464-3468). IEEE."""
+
 
 def box_to_state(box):
     """Takes a box [x, y, w, h] and converts to to the kalman state [x, y, s, r]"""
@@ -83,35 +88,39 @@ class SortTracklet(Tracklet):
 
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
-        conf = self.boxes[-1][4]
+        conf = -1 #self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*predicted_box, conf, label])
     
     def kalman_update(self, measurement):
-        return self.kf_tracker.update(measurement)
+        updated_box = self.kf_tracker.update(measurement)
+        conf = -2 #self.boxes[-1][4]
+        label = self.boxes[-1][5]
+        return np.array([*updated_box, conf, label])
     
 
-def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = True):
+def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = False):
     start_time = time.time()
     active_tracklets = []
     deceased_tracklets = []
     id_counter = 0
 
     print("Starting SORT")
-    for i, frame in tqdm(enumerate(video), bar_format="{l_bar}{bar:30}{r_bar}"):
+    for i, frame in tqdm(list(enumerate(video)), bar_format="{l_bar}{bar:30}{r_bar}"):
         frame_pred = model.xywhcl(frame)
-        tracklet_predictions = [t.predict() for t in active_tracklets]
+        tracklet_predictions = [t.kalman_predict() for t in active_tracklets]
 
         tracklet_indices, detection_indices = [], []
+        unassigned_track_indices, unassigned_det_indices = [], []
         if len(tracklet_predictions) == 0: unassigned_det_indices = [j for j in range(len(frame_pred))]
         if len(frame_pred) == 0: unassigned_track_indices = [j for j in range(len(active_tracklets))]
 
-        if len(tracklet_predictions) != 0 or len(frame_pred) != 0:
+        if len(tracklet_predictions) != 0 and len(frame_pred) != 0:
             #determine tracklet kf pred and model pred matching using optimal linear sum assignment
             iou_mat = iou_matrix(tracklet_predictions, frame_pred)
             tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
-            unassigned_det_indices = [j for j in range(len(active_tracklets)) if j not in tracklet_indices]
-            unassigned_track_indices = [j for j in range(len(frame_pred)) if j not in detection_indices]
+            unassigned_track_indices = [j for j in range(len(active_tracklets)) if j not in tracklet_indices]
+            unassigned_det_indices = [j for j in range(len(frame_pred)) if j not in detection_indices]
 
             for track_i, detect_i in zip(tracklet_indices, detection_indices):
                 iou = iou_mat[track_i][detect_i]
@@ -120,7 +129,7 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = True):
 
                 if iou >= iou_min:
                     #successful match, update kf preds with det measurements
-                    updated_kf_box = assigned_tracklet.update(assigned_det)
+                    updated_kf_box = assigned_tracklet.kalman_update(assigned_det)
                     assigned_tracklet.add_box(updated_kf_box, i)
                     assigned_tracklet.miss_streak = 0
                     assigned_tracklet.hits += 1
@@ -150,13 +159,15 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = True):
 
     #remove tracklets that did not meet the requirement minimum number of hits
     combined_tracklets = deceased_tracklets + active_tracklets
-    for track_i in range(len(combined_tracklets)):
+    for track_i in range(len(combined_tracklets) - 1, -1, -1):
         if combined_tracklets[track_i].hits < min_hits:
             combined_tracklets.pop(track_i)
 
     ts = TrackletSet(video, combined_tracklets, model.num_to_class)
-    
+
     duration = round((time.time() - start_time)/60, 2)
     print(f"Finished SORT in {duration}mins")
+    print(f"{id_counter + 1} tracklets created")
+    print(f"{len(combined_tracklets)} tracklets kept")
     if not no_save: save_VOD(ts, "SORT")
     return ts
