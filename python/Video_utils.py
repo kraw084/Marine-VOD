@@ -34,6 +34,7 @@ class Video:
         self.path = os.path.dirname(video_file_path)
         self.name = os.path.basename(video_file_path).split(".")[0]
         self.file_type = video_file_path.split(".")[-1]
+        self.full_name = self.name + "." + self.file_type
         self.frames = []
         self.size = (0, 0)
         self.fps = 0
@@ -41,6 +42,8 @@ class Video:
         self.num_of_frames = 0
 
         if not init_empty:
+            if not os.path.isfile(video_file_path): raise ValueError(f"{video_file_path} not found")
+
             cap = cv2.VideoCapture(video_file_path)
             self.size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) #(w, h) of the image
             self.fps = cap.get(cv2.CAP_PROP_FPS) #frame rate of the video
@@ -117,7 +120,7 @@ class Video:
         print(f"Saved as {video_file_path}")
 
     def __repr__(self):
-        return f"Video({self.name})"
+        return f"Video({self.full_name})"
     
     def __iter__(self):
         self.i = 0

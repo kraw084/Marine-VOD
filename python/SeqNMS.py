@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 
-from VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD
+from VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD, silence
 
 """Han, W., Khorrami, P., Paine, T. L., Ramachandran, P., Babaeizadeh, M., Shi, H., ... & Huang, T. S. (2016). 
    Seq-nms for video object detection. arXiv preprint arXiv:1602.08465.
@@ -118,6 +118,7 @@ def select_sequence(frame_preds, id):
     return tracklet
 
 
+@silence
 def Seq_nms(model, video, nms_iou = 0.6, avg_conf_th = 0.2, early_stopping_score_th = 0.8 ,no_save=False):
     """Implements Seq_nms from Han, W. et al (2016)"""
     start_time = time.time()

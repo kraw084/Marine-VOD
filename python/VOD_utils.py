@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import colorsys
 import math
+import contextlib
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
@@ -16,6 +17,19 @@ from Video_utils import Video
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
 colours = [(round(255 * c[0]), round(255 * c[1]), round(255 * c[2])) for c in colours]
+
+
+def silence(func):
+    def wrapper(*args,  silence=False, **kwargs):
+        if silence:
+            with contextlib.redirect_stdout(open(os.devnull, 'w')):
+                with contextlib.redirect_stderr(open(os.devnull, 'w')):
+                    return func(*args, **kwargs)
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
+
 
 def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True, ids=None):
     """Draws a list xywhcl boxes onto a single image"""
@@ -215,7 +229,7 @@ def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
     if not no_save: save_VOD(ts, "fbf")
     return ts
 
-
+@silence
 def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
     """Used to speed up VOD methods by skipping frames. Boxes are interpolated to fit the orignal video.
         arguments:
@@ -382,13 +396,13 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False,
 
 
     #calculate metrics from equations
-    p = tp / (tp + fp)
-    r = tp / (tp + fn)
+    p = tp / (tp + fp) if not (tp + fp) == 0 else 1
+    r = tp / (tp + fn) if not (tp + fn) == 0 else 1
 
     gt_total = sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame])
-    mota = 1 - ((fn + fp + id_switches)/gt_total)
+    mota = 1 - ((fn + fp + id_switches)/(gt_total + 1E-9))
 
-    motp = dist / total_matches
+    motp = dist / total_matches if not total_matches == 0 else 0
 
     #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
     gt_detection_lifetimes = [gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in gt_tracklets]
@@ -425,10 +439,9 @@ def metrics_from_components(components):
     return p, r, mota, motp, mt, pt, ml
 
 
-def print_metrics(vid, p, r, mota, motp, mt, pt, ml):
+def print_metrics(p, r, mota, motp, mt, pt, ml):
     print("-------------------------------------")
-    print(f"Single video metrics: {vid.name + "." + vid.file_type}")
-    print(f"P: {p}, R: {r}")
-    print(f"MOTA: {mota}, MOTP: {motp}")
-    print(f"MT: {mt}, PT: {pt}, ML: {ml}")
+    print(f"P: {round(p, 3)}, R: {round(r, 3)}")
+    print(f"MOTA: {round(mota, 3)}, MOTP: {round(motp, 3)}")
+    print(f"MT: {round(mt, 3)}, PT: {round(pt, 3)}, ML: {round(ml, 3)}")
     print("-------------------------------------")

@@ -5,7 +5,7 @@ import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD
+from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence
 
 """Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
    Simple online and realtime tracking. In 2016 IEEE international conference on image processing
@@ -102,6 +102,7 @@ class SortTracklet(Tracklet):
         return np.array([*updated_box, conf, label])
     
 
+@silence
 def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = False):
     start_time = time.time()
     active_tracklets = []
