@@ -13,6 +13,7 @@ from VOD_utils import Tracklet, TrackletSet
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 import yolov5.train
+import yolov5.val
 
 NUM_TO_LABEL = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", ""]
 
@@ -186,4 +187,6 @@ if __name__ == "__main__":
     
     #train_test_split()
 
-    train_brackish_detector()
+    #train_brackish_detector()
+
+    yolov5.val.run("BrackishMOT/brackishMOT.yaml", "models/brackishMOT_botV1.pt", task="test", conf_thres=0.2, iou_thres=0.4)

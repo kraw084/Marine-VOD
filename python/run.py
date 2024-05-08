@@ -4,7 +4,7 @@ import os
 from Detectors import create_urchin_model, create_brackish_model
 from Video_utils import Video, stitch_video
 from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
-                       TrackletSet, frame_skipping, single_vid_metrics, mutiple_vid_metrics)
+                       TrackletSet, frame_skipping, single_vid_metrics, mutiple_vid_metrics, save_VOD)
 
 from SeqNMS import Seq_nms
 from sort import SORT
@@ -17,12 +17,12 @@ if __name__ == "__main__":
     count = 0
     if False:
         urchin_bot = create_urchin_model(cuda)
-        urchin_video_folder = "D:/urchin video/All/"
+        urchin_video_folder = "E:/urchin video/All/"
 
         for vid_name in os.listdir(urchin_video_folder):
             vid = Video(urchin_video_folder + vid_name)
             print("Finished loading video")
-            vid.play()
+            #vid.play()
 
             #frame_by_frame_VOD(urchin_bot, vid)
             #vid.play(1500)
@@ -31,7 +31,9 @@ if __name__ == "__main__":
             #seqNMSTracklets.video.play(1500, start_paused=True)
 
             sortTracklets = frame_skipping(vid, SORT, urchin_bot, 1, iou_min=0.5, t_lost=5, min_hits=10)
-            sortTracklets.video.play(1500, start_paused=True)
+            #sortTracklets.draw_tracklets()
+            #sortTracklets.video.play(1500, start_paused=True)
+            save_VOD(sortTracklets, "SORT")
 
             count += 1
             if count > 5: break
@@ -50,7 +52,7 @@ if __name__ == "__main__":
 
         for id in ids:
             count+= 1
-            if count <= 5:
+            if count <= 4:
                 continue
 
             vid_name = f"brackishMOT-{id:02}.mp4"
