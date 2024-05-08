@@ -401,7 +401,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False,
         else:
             pt += 1
 
-    if return_components: return tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml
+    if return_components: return np.array([tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml])
 
     mt /= len(gt_detection_lifetimes)
     pt /= len(gt_detection_lifetimes)
@@ -411,14 +411,9 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False,
     return p, r, mota, motp, mt, pt, ml
     
 
-def mutiple_vid_metrics(gt_tracklet_sets, pred_tracklet_sets):
-    """Computes the metrics over a set of videos"""
-    #tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml
-    components = np.zeros((10,))
-
-    for gt_tracklet_set, pred_tracklet_set in zip(gt_tracklet_sets, pred_tracklet_sets):
-        components +=  np.array(*[single_vid_metrics(gt_tracklet_set, pred_tracklet_set, False, True)])
-
+def metrics_from_components(components):
+    """Computes the metrics from component variables, used to calculate metrics on a set of videos"""
+    #components are in the form [tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml]
     p = components[0]/(components[0] + components[1])
     r = components[0]/(components[0] + components[2])
     mota = 1 - ((components[1] + components[2] + components[3])/components[4])
@@ -428,3 +423,12 @@ def mutiple_vid_metrics(gt_tracklet_sets, pred_tracklet_sets):
     ml = components[9]/(components[7] + components[8] + components[9])
 
     return p, r, mota, motp, mt, pt, ml
+
+
+def print_metrics(vid, p, r, mota, motp, mt, pt, ml):
+    print("-------------------------------------")
+    print(f"Single video metrics: {vid.name + "." + vid.file_type}")
+    print(f"P: {p}, R: {r}")
+    print(f"MOTA: {mota}, MOTP: {motp}")
+    print(f"MT: {mt}, PT: {pt}, ML: {ml}")
+    print("-------------------------------------")

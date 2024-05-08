@@ -42,10 +42,10 @@ if __name__ == "__main__":
         brackish_bot = create_brackish_model(cuda)
         brackish_video_folder = "d:/Marine-VOD/BrackishMOT/videos/"
 
-        enable_gt = False
+        enable_gt = True
         enable_fbf = False
-        enable_seqNMS = False
-        enable_SORT = True
+        enable_seqNMS = True
+        enable_SORT = False
 
         data_set = "val"
         ids = id_by_set(data_set)
@@ -81,9 +81,12 @@ if __name__ == "__main__":
                 vid4 = Video(brackish_video_folder + vid_name)
                 sort_tracklet_set = frame_skipping(vid4, SORT, brackish_bot, 1, iou_min=0.5, t_lost=3, min_hits=5)
                 sort_tracklet_set.draw_tracklets()
-                sort_tracklet_set.video.play(1300, start_paused=True)
+                #sort_tracklet_set.video.play(1300, start_paused=True)
 
-            #new_vid = stitch_video(vid2, vid4, "fbf_SORT.mp4")
-            #new_vid.play(1300, start_paused=True)
+            metrics = single_vid_metrics(gt_tracklets, seqNMS_tracklet_set)
+            
+
+            new_vid = stitch_video(vid, vid3, "gt_seqNMS.mp4")
+            new_vid.play(1300, start_paused=True)
 
            

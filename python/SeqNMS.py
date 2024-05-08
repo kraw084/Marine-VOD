@@ -121,13 +121,18 @@ def select_sequence(frame_preds, id):
 def Seq_nms(model, video, nms_iou = 0.6, avg_conf_th = 0.2, early_stopping_score_th = 0.8 ,no_save=False):
     """Implements Seq_nms from Han, W. et al (2016)"""
     start_time = time.time()
-    model.update_parameters(conf=0.01, iou=0.8) #update parameters to effectively skip NMS
+    original_conf = model.conf
+    original_iou = model.iou
+    model.update_parameters(conf=0.01, iou=0.85) #update parameters to effectively skip NMS
 
     print(f"Frames: {video.num_of_frames}")
     frame_predictions = [model.xywhcl(frame) for frame in video]
     remaining_boxes = sum([len(frame_pred) for frame_pred in frame_predictions])
     print(f"Total box predictions: {remaining_boxes}")
     print(f"Avg predictions per frame: {remaining_boxes/video.num_of_frames}")
+
+    #reset model parameters
+    model.update_parameters(conf=original_conf, iou=original_iou)
 
     detected_tracklets = []
     id_counter = 0
