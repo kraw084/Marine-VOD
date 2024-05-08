@@ -139,6 +139,13 @@ class TrackletSet:
         return val
 
 
+def save_VOD(ts, VOD_method_name):
+    print("Saving result . . .")
+    ts.draw_tracklets()
+    count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{ts.video.name}_{VOD_method_name}"])
+    ts.video.save(f"results/{ts.video.name}_{VOD_method_name}_{count}.mp4")
+
+
 def xywhTOxyxy(x, y, w, h):
     """Converts an xywh box to xyxy"""
     return x - w//2, y - h//2, x + w//2, y + h//2
@@ -205,12 +212,7 @@ def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
 
     ts = TrackletSet(video, tracklets, model.num_to_class)    
 
-    if not no_save:
-        print("Saving result . . .")
-        ts.draw_tracklets()
-        count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{video.name}_fbf"])
-        video.save(f"results/{video.name}_fbf_{count}.mp4")
-
+    if not no_save: save_VOD(ts, "fbf")
     return ts
 
 

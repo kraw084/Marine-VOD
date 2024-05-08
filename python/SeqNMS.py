@@ -1,8 +1,8 @@
-from VOD_utils import iou_matrix, Tracklet, TrackletSet
 import numpy as np
 from tqdm import tqdm
 import time
-import os
+
+from VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD
 
 """Han, W., Khorrami, P., Paine, T. L., Ramachandran, P., Babaeizadeh, M., Shi, H., ... & Huang, T. S. (2016). 
    Seq-nms for video object detection. arXiv preprint arXiv:1602.08465.
@@ -180,12 +180,7 @@ def Seq_nms(model, video, nms_iou = 0.6, avg_conf_th = 0.2, early_stopping_score
 
     duration = round((time.time() - start_time)/60, 2)
     print(f"Finished SeqNMS in {duration}mins ({round(duration/video.num_of_frames, 4)}mins per frame)")
-    if not no_save:
-        print("Saving result . . .")
-        ts.draw_tracklets()
-        count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{ts.video.name}_seqNMS"])
-        ts.video.save(f"results/{ts.video.name}_seqNMS_{count}.mp4")
-
+    if not no_save: save_VOD(ts, "seqNMS")
     return ts
 
     
