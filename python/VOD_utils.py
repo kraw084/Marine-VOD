@@ -46,7 +46,7 @@ def draw_box(im, box, label, colour, id = None):
     top_left = (int(box[0]) - int(box[2])//2, int(box[1]) - int(box[3])//2)
     bottom_right = (top_left[0] + int(box[2]), top_left[1] + int(box[3]))
     cv2.rectangle(im, top_left, bottom_right, colour, thickness)
-    label = f"{f'{id}. ' if id else ''}{label} - {float(box[4]):.2f}"
+    label = f"{f'{id}. ' if not id is None else ''}{label} - {float(box[4]):.2f}"
 
     text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
     text_box_top_left = (top_left[0], top_left[1] - text_size[1])
@@ -119,7 +119,7 @@ class TrackletSet:
 
         return counts, totals
     
-    def draw_tracklets(self, correct_id = None, draw_data=True):
+    def draw_tracklets(self, correct_id = None, annotate_data=True):
         """Draws all tracklets and counts/totals on the video, randomizes colours"""
         frames = self.video.frames
         counts, totals = self.count_per_frame()
@@ -131,9 +131,9 @@ class TrackletSet:
             for frame_index, box in tracklet:
                 if not correct_id is None:
                     colour = (19, 235, 76) if (frame_index, id) in correct_id else (232, 42, 21)
-                draw_box(frames[frame_index], box, self.num_to_label[box[5]], colour, id)
-                
-        if draw_data:
+                draw_box(frames[frame_index], box, self.num_to_label[int(box[5])], colour, id)
+
+        if annotate_data:
             for i, frame in enumerate(frames):
                 draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
 
@@ -243,7 +243,6 @@ def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
     for i in range(0, full_video.num_of_frames, 1 + n):
         new_frames.append(full_video.frames[i])
         kept_frame_indices.append(i)
-    print("Created new frame set")
 
     #create new video with skipped frame and run VOD
     frame_skipped_vid = Video(f"{full_video.path}/{full_video.name}_frame_skipped_n.{full_video.file_type}", init_empty=True)
@@ -253,7 +252,6 @@ def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
     skipped_tracklet_set = vod_method(model = model, video = frame_skipped_vid, no_save = True, **vod_kwargs)
     new_tracklets = []
 
-    print("Interpolating boxes")
     #interpolate boxes over skipped frames
     for skipped_tracklet in skipped_tracklet_set:
         prev_box = skipped_tracklet.boxes[0]

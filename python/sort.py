@@ -5,7 +5,7 @@ import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence
+from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
 
 """Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
    Simple online and realtime tracking. In 2016 IEEE international conference on image processing
@@ -103,7 +103,7 @@ class SortTracklet(Tracklet):
     
 
 @silence
-def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = False):
+def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, greedy_assoc = False, no_save = False):
     start_time = time.time()
     active_tracklets = []
     deceased_tracklets = []
@@ -122,7 +122,13 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, no_save = False)
         if len(tracklet_predictions) != 0 and len(frame_pred) != 0:
             #determine tracklet kf pred and model pred matching using optimal linear sum assignment
             iou_mat = iou_matrix(tracklet_predictions, frame_pred)
-            tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
+            if not greedy_assoc:
+                tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
+            else:
+                _, match_indices = correct_preds(tracklet_predictions, frame_pred, iou=iou_min)
+                tracklet_indices = list(match_indices[:, 0])
+                detection_indices = list(match_indices[:, 1])
+
             unassigned_track_indices = [j for j in range(len(active_tracklets)) if j not in tracklet_indices]
             unassigned_det_indices = [j for j in range(len(frame_pred)) if j not in detection_indices]
 
