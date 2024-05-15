@@ -23,40 +23,36 @@ def silence(func):
     def wrapper(*args,  silence=False, **kwargs):
         if silence:
             with contextlib.redirect_stdout(open(os.devnull, 'w')):
-                with contextlib.redirect_stderr(open(os.devnull, 'w')):
-                    return func(*args, **kwargs)
+                result =  func(*args, **kwargs)
+                return result
         else:
             return func(*args, **kwargs)
 
     return wrapper
 
 
-def annotate_image(im, prediction, num_to_label, num_to_colour, draw_labels=True, ids=None):
+def annotate_image(im, prediction, num_to_label, num_to_colour, ids=None):
     """Draws a list xywhcl boxes onto a single image"""
+    for id, box in zip(ids, prediction):
+        label = num_to_label[box[5]]
+        colour = num_to_label[box[5]]
+        draw_box(im, box, label, colour, id)
+
+
+def draw_box(im, box, label, colour, id = None):
+    """Draws a single box onto an image"""
     thickness = 3
     font_size = 1
+    top_left = (int(box[0]) - int(box[2])//2, int(box[1]) - int(box[3])//2)
+    bottom_right = (top_left[0] + int(box[2]), top_left[1] + int(box[3]))
+    cv2.rectangle(im, top_left, bottom_right, colour, thickness)
+    label = f"{f'{id}. ' if id else ''}{label} - {float(box[4]):.2f}"
 
-    label_data = []
-    for i, pred in enumerate(prediction):
-        top_left = (int(pred[0]) - int(pred[2])//2, int(pred[1]) - int(pred[3])//2)
-        bottom_right = (top_left[0] + int(pred[2]), top_left[1] + int(pred[3]))
-        label = num_to_label[int(pred[5])]
-
-        colour = num_to_colour[int(pred[5])]
-
-        #Draw boudning box
-        im = cv2.rectangle(im, top_left, bottom_right, colour, thickness)
-
-        label_data.append((f"{f'{ids[i]}. ' if ids else ''}{label} - {float(pred[4]):.2f}", top_left, colour))
-    
-    #Draw text over boxes
-    if draw_labels:
-        for data in label_data:
-            text_size = cv2.getTextSize(data[0], cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
-            text_box_top_left = (data[1][0], data[1][1] - text_size[1])
-            text_box_bottom_right = (data[1][0] + text_size[0], data[1][1])
-            im = cv2.rectangle(im, text_box_top_left, text_box_bottom_right, data[2], -1)
-            im = cv2.putText(im, data[0], data[1], cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
+    text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
+    text_box_top_left = (top_left[0], top_left[1] - text_size[1])
+    text_box_bottom_right = (top_left[0] + text_size[0], top_left[1])
+    cv2.rectangle(im, text_box_top_left, text_box_bottom_right, colour, -1)
+    cv2.putText(im, label, top_left, cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
 
 
 def draw_data(im, data_dict):
@@ -123,7 +119,7 @@ class TrackletSet:
 
         return counts, totals
     
-    def draw_tracklets(self, correct_id = None):
+    def draw_tracklets(self, correct_id = None, draw_data=True):
         """Draws all tracklets and counts/totals on the video, randomizes colours"""
         frames = self.video.frames
         counts, totals = self.count_per_frame()
@@ -135,12 +131,11 @@ class TrackletSet:
             for frame_index, box in tracklet:
                 if not correct_id is None:
                     colour = (19, 235, 76) if (frame_index, id) in correct_id else (232, 42, 21)
-
-                annotate_image(frames[frame_index], [box], self.num_to_label, 
-                               [colour] * len(self.num_to_label), ids=[id])
-        
-        for i, frame in enumerate(frames):
-            draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
+                draw_box(frames[frame_index], box, self.num_to_label[box[5]], colour, id)
+                
+        if draw_data:
+            for i, frame in enumerate(frames):
+                draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
 
     def __iter__(self):
         self.i = 0
@@ -428,11 +423,11 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False,
 def metrics_from_components(components):
     """Computes the metrics from component variables, used to calculate metrics on a set of videos"""
     #components are in the form [tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml]
-    p = components[0]/(components[0] + components[1])
-    r = components[0]/(components[0] + components[2])
-    mota = 1 - ((components[1] + components[2] + components[3])/components[4])
-    motp = components[5]/components[6]
-    mt = components[7]/(components[7] + components[8] + components[9])
+    p = components[0]/(components[0] + components[1]) if not (components[0] + components[1]) == 0 else 1
+    r = components[0]/(components[0] + components[2]) if not (components[0] + components[2]) == 0 else 1
+    mota = 1 - ((components[1] + components[2] + components[3])/components[4] + 1E-9)
+    motp = components[5]/components[6] if not components[6] == 0 else 0
+    mt = components[7]/(components[7] + components[8] + components[9]) 
     pt = components[8]/(components[7] + components[8] + components[9])   
     ml = components[9]/(components[7] + components[8] + components[9])
 

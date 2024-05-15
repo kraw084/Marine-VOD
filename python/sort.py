@@ -91,14 +91,14 @@ class SortTracklet(Tracklet):
 
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
-        conf = self.boxes[-1][4]
+        conf = -1 #self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*predicted_box, conf, label])
     
     def kalman_update(self, measurement):
         updated_box = self.kf_tracker.update(measurement)
-        conf = self.boxes[-1][4]
-        label = self.boxes[-1][5]
+        conf = measurement[4]
+        label = measurement[5]
         return np.array([*updated_box, conf, label])
     
 
