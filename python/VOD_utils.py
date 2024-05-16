@@ -75,7 +75,10 @@ class Tracklet:
         self.start_frame = None
         self.end_frame = -1
 
-    def add_box(self, box, frame_index):
+    def add_box(self, box, frame_index, im_shape=None):
+        if not im_shape is None:
+            box = self.clip_box(box, im_shape[1], im_shape[0])
+
         self.boxes.append(box)
         self.frame_indexes.append(frame_index)
 
@@ -86,7 +89,25 @@ class Tracklet:
         
     def tracklet_length(self):
         return len(self.boxes)
-    
+
+
+    def clip_box(self, box, im_w, im_h):
+        x_c, y_c, box_w, box_h = box[:4]
+        x_min, y_min = x_c - box_w/2, y_c - box_h/2
+        x_max, y_max = x_c + box_w/2, y_c + box_h/2
+
+        if x_min < 0: x_min = 0
+        if y_min < 0: y_min = 0
+        if x_max > im_w: x_max = im_w
+        if y_max > im_h: y_max = im_h
+
+        x_c_new = (x_max + x_min)/2
+        y_c_new = (y_max + y_min)/2
+        box_w_new = (x_max - x_min)
+        box_h_new = (y_max - y_min)
+
+        return np.array([x_c_new, y_c_new, box_w_new, box_h_new, box[4], box[5]])
+
     def __iter__(self):
         self.i = 0
         return self

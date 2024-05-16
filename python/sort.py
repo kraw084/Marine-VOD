@@ -140,7 +140,7 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, greedy_assoc = F
                 if iou >= iou_min:
                     #successful match, update kf preds with det measurements
                     updated_kf_box = assigned_tracklet.kalman_update(assigned_det)
-                    assigned_tracklet.add_box(updated_kf_box, i)
+                    assigned_tracklet.add_box(updated_kf_box, i, frame.shape)
                     assigned_tracklet.miss_streak = 0
                     assigned_tracklet.hits += 1
                 else:
@@ -151,7 +151,7 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, greedy_assoc = F
         #tracklet had no match, update with just kf pred
         for track_i in unassigned_track_indices:
             track = active_tracklets[track_i]
-            track.add_box(tracklet_predictions[track_i], i)
+            track.add_box(tracklet_predictions[track_i], i, frame.shape)
             track.miss_streak += 1
 
         #detection had no match, create new tracklet
