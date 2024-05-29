@@ -10,7 +10,6 @@ import contextlib
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
-from yolov5.val import process_batch
 
 from Video_utils import Video
 
@@ -33,9 +32,9 @@ def silence(func):
 
 def annotate_image(im, prediction, num_to_label, num_to_colour, ids=None):
     """Draws a list xywhcl boxes onto a single image"""
-    for id, box in zip(ids, prediction):
-        label = num_to_label[box[5]]
-        colour = num_to_label[box[5]]
+    for id, box in zip(ids if not ids is None else [None for _ in range(len(prediction))], prediction):
+        label = num_to_label[int(box[5])]
+        colour = num_to_colour[int(box[5])]
         draw_box(im, box, label, colour, id)
 
 

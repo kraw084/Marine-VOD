@@ -37,7 +37,7 @@ def create_bMOT_videos():
             config.read(path + "/" + video_folder + "/seqinfo.ini")
             fps = int(config["Sequence"]["frameRate"])
 
-            frames_to_video(frames, "BrackishMOT/videos/" + video_folder + ".mp4", fps, None, size)
+            frames_to_video(frames, "BrackishMOT/videos/" + video_folder + ".mp4", fps, size)
             
 
 def brackishMOT_tracklet(video_number):

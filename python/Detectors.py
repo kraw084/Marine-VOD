@@ -1,4 +1,8 @@
 import torch
+import numpy as np
+import os
+
+from VOD_utils import round_box
 
 
 class YoloV5ObjectDetector:
@@ -35,9 +39,6 @@ class YoloV5ObjectDetector:
             pred = self.predict(im)
             yield pred
 
-    def label(self, number):
-        return self.num_to_class[number]
-
     def __call__(self, im):
         return self.predict(im)
     
@@ -45,15 +46,56 @@ class YoloV5ObjectDetector:
         """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
         the x, y, w, h, conf and label codes of each prediction"""
         pred = self(im).xywh[0].cpu().numpy()
-        for row in pred:
-            row[0] = round(row[0])
-            row[1] = round(row[1])
-            row[2] = round(row[2])
-            row[3] = round(row[3])
+        #for row in pred:
+        #    row[0] = round(row[0])
+        #    row[1] = round(row[1])
+        #    row[2] = round(row[2])
+        #    row[3] = round(row[3])
 
-            row[4] = round(row[4], 2)
+        #    row[4] = round(row[4], 2)
 
-        return [box for box in pred]
+        return [round_box(box) for box in pred]
+
+
+class PublicDetectionsDetector:
+    def __init__(self, vid_name, classes, colours,  detector="FRCNN", conf=0.45):
+        self.conf = conf
+
+        self.num_to_class = classes
+        self.num_to_colour = colours
+
+        self.vid_name = vid_name
+        self.detector = detector
+
+        if detector not in ("DPM", "FRCNN", "SDP"): raise ValueError("detector must be DPM, FRCNN or SDP")
+        set_folder = "train" if os.path.isdir(f"MOT17/train/{vid_name}-{detector}") else "test"
+        det_file = open(f"MOT17/{set_folder}/{vid_name}-{detector}/det/det.txt")
+        self.dets = [tuple([float(num) for num in line.strip("/n").split(",")]) for line in det_file.readlines()]
+        det_file.close()
+
+        self.frame_counter = 0
+
+    def update_parameters(self, conf=0.45, iou=0.6):
+        self.conf = conf
+    
+    def xywhcl(self, im):
+        """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
+        the x, y, w, h, conf and label codes of each prediction"""
+
+        frame_dets = []
+        for frame, id, top_left_x, top_left_y, width, height, conf, *coords in self.dets:
+            if frame - 1 != self.frame_counter: continue
+            if conf < self.conf: continue
+
+            center_x = top_left_x + width/2
+            center_y = top_left_y + height/2
+            box = round_box(np.array([center_x, center_y, width, height, conf, 0]))
+
+            frame_dets.append(box)
+
+        self.frame_counter += 1
+
+        return frame_dets
 
 
 def create_urchin_model(cuda = None):
@@ -74,6 +116,10 @@ def create_brackish_model(cuda = None):
     
     bot.model.agnostic = True
     return bot
+
+
+def create_MOT_model(vid_name):
+    return PublicDetectionsDetector(vid_name, ["Pedestrian"], [(255, 0, 0)], conf=0.6)
 
 
 if __name__ == "__main__":
