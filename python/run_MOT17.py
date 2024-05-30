@@ -17,9 +17,9 @@ if __name__ == "__main__":
     names = sorted(vid_names_by_set(data_set))
 
     enable_gt = True
-    enable_fbf = False
+    enable_fbf = True
     enable_seqNMS = False
-    enable_SORT = True
+    enable_SORT = False
 
     compare_to_gt = True
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         if enable_gt:
             vid1 = load_MOT17_video(vid_name, data_set)
-            gt_tracklets = MOT17_gt_tracklet(vid1)
+            gt_tracklets = MOT17_gt_tracklet(vid1, conf_threshold=0.5)
 
         if enable_fbf:
             vid2 = load_MOT17_video(vid_name, data_set)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 
         if enable_gt and compare_to_gt:
-            *metrics, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, True)
+            *metrics, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_correct_ids=True)
 
             gt_tracklets.draw_tracklets(gt_ids)
             target_tracklets.draw_tracklets(pred_ids)

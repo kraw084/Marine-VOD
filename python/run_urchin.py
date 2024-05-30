@@ -13,7 +13,6 @@ from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets,
 from SeqNMS import Seq_nms
 from sort import SORT
 
-
 if __name__ == "__main__":
     cuda = torch.cuda.is_available()
     count = 0

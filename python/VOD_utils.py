@@ -13,6 +13,7 @@ from yolov5.utils.metrics import box_iou, bbox_iou
 
 from Video_utils import Video
 
+
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
 colours = [(round(255 * c[0]), round(255 * c[1]), round(255 * c[2])) for c in colours]
@@ -351,7 +352,7 @@ def trackletSet_frame_by_frame(tracklets):
     return boxes_by_frame, ids_by_frame
 
 
-def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False, return_components = False):
+def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_correct_ids = False, return_components = False):
     """Calculates multiple metrics using a set of ground truth tracklets
         Arguments:
             gt_tracklets: tracklet set representing the true labels
@@ -374,7 +375,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, return_correct_ids = False,
     #Loop over predictions in each frame to get the components of each metric
     corresponding_id = {}
     for i in range(len(gt_boxes_by_frame)):
-        correct, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i])
+        correct, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i], iou=match_iou)
         num_correct = np.sum(correct)
 
         tp += num_correct
