@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from Video_utils import Video, frames_to_video
-from VOD_utils import Tracklet, TrackletSet, annotate_image
+from VOD_utils import Tracklet, TrackletSet, annotate_image, round_box
 from Detectors import PublicDetectionsDetector
 
 
@@ -33,7 +33,7 @@ def create_MOT17_videos():
 
 
 def test_mot_detector():
-    detector = PublicDetectionsDetector("MOT17-02", ["Pedestrian"], [(255, 0, 0)], conf=0.6)
+    detector = PublicDetectionsDetector("MOT17-02", ["Person"], [(255, 0, 0)], conf=0.6)
     vid = Video("MOT17/videos/MOT17-02.mp4")
     for frame in vid:
         pred = detector.xywhcl(frame)
@@ -42,5 +42,35 @@ def test_mot_detector():
     vid.play()
 
 
+def MOT17_gt_tracklet(vid):
+    vid_name = vid.name
+    set_folder = "train" if os.path.isdir(f"MOT17/train/{vid_name}-FRCNN") else "test"
+    gt_file = open(f"MOT17/{set_folder}/{vid_name}-FRCNN/gt/gt.txt")
+    gts = [tuple([float(num) for num in line.strip("/n").split(",")]) for line in gt_file.readlines()]
+    gt_file.close()
+
+    tracklets = {}
+    for frame, id, top_left_x, top_left_y, width, height, is_person, class_number, conf in gts:
+        if is_person == 0: continue
+
+        center_x = top_left_x + width/2
+        center_y = top_left_y + height/2
+        box = round_box(np.array([center_x, center_y, width, height, conf, 0]))
+
+        if id in tracklets:
+            tracklets[id].add_box(box, int(frame) - 1)
+        else:
+            new_tracklet = Tracklet(id)
+            new_tracklet.add_box(box, int(frame) - 1)
+            tracklets[id] = new_tracklet
+
+    return TrackletSet(vid, list(tracklets.values()), ["Person"])
+
+
 if __name__ == "__main__":
-    test_mot_detector()
+    #test_mot_detector()
+
+    vid = Video("MOT17/videos/MOT17-02.mp4")
+    ts = MOT17_gt_tracklet(vid)
+    ts.draw_tracklets()
+    ts.video.play()

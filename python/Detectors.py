@@ -119,7 +119,7 @@ def create_brackish_model(cuda = None):
 
 
 def create_MOT_model(vid_name):
-    return PublicDetectionsDetector(vid_name, ["Pedestrian"], [(255, 0, 0)], conf=0.6)
+    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6)
 
 
 if __name__ == "__main__":
