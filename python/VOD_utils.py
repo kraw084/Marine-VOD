@@ -368,9 +368,10 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
         Returns:
             precision, recall, multi-object tracking accuray, multi-object tracking precision, 
             mostly tracked, partially tracked, mostly lost"""
-    tp, fp, fn, id_switches, dist, total_matches = 0, 0, 0, 0, 0, 0
+    tp, fp, fn, id_switches, dist, total_matches, frag = 0, 0, 0, 0, 0, 0, 0
     gt_correct_ids, pred_correct_ids = [], []
     gt_detection_lifetimes = {gt_track.id:0 for gt_track in gt_tracklets}
+    gt_is_tracked = {gt_track.id:False for gt_track in gt_tracklets}
 
     #get boxes for each frame
     gt_boxes_by_frame, gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
@@ -389,10 +390,14 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
         fp += correct.shape[0] - num_correct
         fn += len(gt_boxes_by_frame[i]) - num_correct
 
+        new_gt_is_tracked = {gt_track.id:False for gt_track in gt_tracklets}
+
         if not matches is None:
             for gt_index, pred_index in matches:
                 gt_tracklet_id = gt_ids_by_frame[i][gt_index]
                 pred_tracklet_id = pred_ids_by_frame[i][pred_index]
+
+                new_gt_is_tracked[gt_tracklet_id] = True
 
                 if not gt_tracklet_id in corresponding_id:
                     #first time tracklet has a match
@@ -415,6 +420,13 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
                     gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
                     pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))  
 
+        for gt_tracklet_id in [gt_track.id for gt_track in gt_tracklets]:
+            prev_tracked = gt_is_tracked[gt_tracklet_id]
+            currently_tracked = new_gt_is_tracked[gt_tracklet_id]
+            if prev_tracked and not currently_tracked:
+                frag += 1
+
+        gt_is_tracked = new_gt_is_tracked
 
     #calculate metrics from equations
     p = tp / (tp + fp) if not (tp + fp) == 0 else 1
@@ -436,14 +448,14 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
         else:
             pt += 1
 
-    if return_components: return np.array([tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml])
+    if return_components: return np.array([tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml, frag])
 
     mt /= len(gt_detection_lifetimes)
     pt /= len(gt_detection_lifetimes)
     ml /= len(gt_detection_lifetimes)
 
-    if return_correct_ids: return p, r, mota, motp, mt, pt, ml, gt_correct_ids, pred_correct_ids
-    return p, r, mota, motp, mt, pt, ml
+    if return_correct_ids: return p, r, mota, motp, mt, pt, ml, gt_correct_ids, id_switches, frag, pred_correct_ids
+    return p, r, mota, motp, mt, pt, ml, id_switches, frag
     
 
 def metrics_from_components(components):
@@ -456,13 +468,16 @@ def metrics_from_components(components):
     mt = components[7]/(components[7] + components[8] + components[9]) 
     pt = components[8]/(components[7] + components[8] + components[9])   
     ml = components[9]/(components[7] + components[8] + components[9])
+    frag = components[10]
+    id_switches = components[3]
 
-    return p, r, mota, motp, mt, pt, ml
+    return p, r, mota, motp, mt, pt, ml, id_switches, frag
 
 
-def print_metrics(p, r, mota, motp, mt, pt, ml):
+def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print("-------------------------------------")
     print(f"P: {round(p, 3)}, R: {round(r, 3)}")
     print(f"MOTA: {round(mota, 3)}, MOTP: {round(motp, 3)}")
     print(f"MT: {round(mt, 3)}, PT: {round(pt, 3)}, ML: {round(ml, 3)}")
+    print(f"IDSW: {round(id_switchs, 3)}, FM: {frag}")
     print("-------------------------------------")
