@@ -49,6 +49,10 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
     gts = [tuple([float(num) for num in line.strip("/n").split(",")]) for line in gt_file.readlines()]
     gt_file.close()
 
+    config = configparser.ConfigParser()
+    config.read("MOT17/" + set_folder + "/" + vid_name + "-FRCNN/seqinfo.ini")
+    im_shape = (int(conf["Sequence"]["imHeight"]), int(conf["Sequence"]["imWidth"]))
+
     tracklets = {}
     for frame, id, top_left_x, top_left_y, width, height, is_person, class_number, conf in gts:
         if is_person == 0: continue
@@ -62,10 +66,10 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
 
         id = int(id)
         if id in tracklets:
-            tracklets[id].add_box(box, int(frame) - 1)
+            tracklets[id].add_box(box, int(frame) - 1, im_shape)
         else:
             new_tracklet = Tracklet(id)
-            new_tracklet.add_box(box, int(frame) - 1)
+            new_tracklet.add_box(box, int(frame) - 1, im_shape)
             tracklets[id] = new_tracklet
 
     return TrackletSet(vid, list(tracklets.values()), ["Person"])

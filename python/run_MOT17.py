@@ -17,13 +17,24 @@ if __name__ == "__main__":
     names = sorted(vid_names_by_set(data_set))
 
     enable_gt = True
-    enable_fbf = True
+    enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = False
+    enable_SORT = True
 
     compare_to_gt = True
 
+    start = 1
+    end = len(names)
+
+    count = 0
     for vid_name in names:
+        count += 1
+        if count - 1 < start:
+            continue
+
+        if count - 1 >= end:
+            break
+
         MOT17_bot = create_MOT_model(vid_name)
 
         if enable_gt:
@@ -42,7 +53,7 @@ if __name__ == "__main__":
 
         if enable_SORT:
             vid4 = load_MOT17_video(vid_name, data_set)
-            sort_tracklets = SORT(MOT17_bot, vid4, iou_min=0.5, t_lost=5, min_hits=5, no_save=True, silence=False)
+            sort_tracklets = SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=5, min_hits=5, no_save=True, silence=False)
             target_tracklets = sort_tracklets
 
 
