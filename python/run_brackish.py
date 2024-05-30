@@ -1,9 +1,9 @@
 import os
 os.environ["TQDM_DISABLE"] = "1"
 
-import torch
 import numpy as np
 
+from Config import Config
 from Detectors import create_brackish_model
 from Video_utils import Video, stitch_video
 from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
@@ -17,10 +17,8 @@ from BrackishMOT import brackishMOT_tracklet, id_by_set
 
 
 if __name__ == "__main__":
-    cuda = torch.cuda.is_available()
-
-    brackish_bot = create_brackish_model(cuda)
-    brackish_video_folder = "E:/Marine-VOD/BrackishMOT/videos/"
+    brackish_bot = create_brackish_model(Config.cuda)
+    brackish_video_folder = f"{Config.drive}:/Marine-VOD/BrackishMOT/videos/"
 
     enable_gt = True
     enable_fbf = False

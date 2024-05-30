@@ -12,7 +12,7 @@ sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
 
 from Video_utils import Video
-
+from Config import Config
 
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
@@ -41,18 +41,25 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, ids=None):
 
 def draw_box(im, box, label, colour, id = None):
     """Draws a single box onto an image"""
-    thickness = 3
-    font_size = 1
+    box_thickness = 3
+    text_thickness = math.floor(3 * Config.label_font_thickness)
+    font_size = 1 * Config.label_font_size
     top_left = (int(box[0]) - int(box[2])//2, int(box[1]) - int(box[3])//2)
     bottom_right = (top_left[0] + int(box[2]), top_left[1] + int(box[3]))
-    cv2.rectangle(im, top_left, bottom_right, colour, thickness)
-    label = f"{f'{id}. ' if not id is None else ''}{label} - {float(box[4]):.2f}"
+    cv2.rectangle(im, top_left, bottom_right, colour, box_thickness)
 
-    text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)[0]
-    text_box_top_left = (top_left[0], top_left[1] - text_size[1])
-    text_box_bottom_right = (top_left[0] + text_size[0], top_left[1])
-    cv2.rectangle(im, text_box_top_left, text_box_bottom_right, colour, -1)
-    cv2.putText(im, label, top_left, cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness - 1, cv2.LINE_AA)
+    if not Config.minimal_labels:
+        label = f"{f'{id}. ' if not id is None else ''}{label} - {float(box[4]):.2f}"
+    else:
+        label = f"{f'{id} -' if not id is None else ''} {float(box[4]):.2f}"
+
+    if Config.draw_labels:
+        text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_size, text_thickness)[0]
+        text_box_top_left = (top_left[0], top_left[1] - (text_size[1] if not Config.labels_in_box else 0))
+        text_box_bottom_right = (top_left[0] + text_size[0], top_left[1] + (text_size[1] if Config.labels_in_box else 0))
+        cv2.rectangle(im, text_box_top_left, text_box_bottom_right, colour, -1)
+        cv2.putText(im, label, (top_left[0], top_left[1] + (text_size[1] if Config.labels_in_box else 0)), 
+                    cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), text_thickness - 1, cv2.LINE_AA)
 
 
 def draw_data(im, data_dict):
@@ -64,7 +71,7 @@ def draw_data(im, data_dict):
 
     for i, data in enumerate(data_dict):
         text = f"{data}: {data_dict[data]}"
-        im = cv2.putText(im, text, (start_point[0], start_point[1] + i * gap), cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 0), thickness, cv2.LINE_AA)
+        im = cv2.putText(im, text, (start_point[0], start_point[1] + i * gap), cv2.FONT_HERSHEY_SIMPLEX, font_size, Config.data_text_colour, thickness, cv2.LINE_AA)
 
 
 class Tracklet:

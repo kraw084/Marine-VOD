@@ -1,9 +1,7 @@
 import os
 os.environ["TQDM_DISABLE"] = "1"
 
-import torch
-import numpy as np
-
+from Config import Config
 from Detectors import create_urchin_model
 from Video_utils import Video, stitch_video
 from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
@@ -14,11 +12,10 @@ from SeqNMS import Seq_nms
 from sort import SORT
 
 if __name__ == "__main__":
-    cuda = torch.cuda.is_available()
     count = 0
 
-    urchin_bot =  create_urchin_model(cuda)
-    urchin_video_folder = "E:/urchin video/All/"
+    urchin_bot =  create_urchin_model(Config.cuda)
+    urchin_video_folder = f"{Config.drive}:/urchin video/All/"
 
     for vid_name in os.listdir(urchin_video_folder):
         vid = Video(urchin_video_folder + vid_name)
