@@ -454,13 +454,13 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
     pt /= len(gt_detection_lifetimes)
     ml /= len(gt_detection_lifetimes)
 
-    if return_correct_ids: return p, r, mota, motp, mt, pt, ml, gt_correct_ids, id_switches, frag, pred_correct_ids
+    if return_correct_ids: return p, r, mota, motp, mt, pt, ml, id_switches, frag, gt_correct_ids, pred_correct_ids
     return p, r, mota, motp, mt, pt, ml, id_switches, frag
     
 
 def metrics_from_components(components):
     """Computes the metrics from component variables, used to calculate metrics on a set of videos"""
-    #components are in the form [tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml]
+    #components are in the form [tp, fp, fn, id_switches, gt_total, dist, total_matches, mt, pt, ml, frag]
     p = components[0]/(components[0] + components[1]) if not (components[0] + components[1]) == 0 else 1
     r = components[0]/(components[0] + components[2]) if not (components[0] + components[2]) == 0 else 1
     mota = 1 - ((components[1] + components[2] + components[3])/components[4] + 1E-9)

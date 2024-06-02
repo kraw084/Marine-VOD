@@ -81,17 +81,18 @@ class KalmanTracker():
     
 
 class SortTracklet(Tracklet):
-    def __init__(self, id, initial_box, initial_frame_index):
+    def __init__(self, id, initial_box, initial_frame_index, timer):
         super().__init__(id)
         self.kf_tracker = KalmanTracker(initial_box)
         self.miss_streak = 0
         self.hits = 1
+        self.timer = timer
 
         self.add_box(initial_box, initial_frame_index)
 
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
-        conf = -1 #self.boxes[-1][4]
+        conf = self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*predicted_box, conf, label])
     
@@ -101,9 +102,12 @@ class SortTracklet(Tracklet):
         label = measurement[5]
         return np.array([*updated_box, conf, label])
     
+    def dec_timer(self):
+        if self.timer != 0: self.timer -= 1
+    
 
 @silence
-def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, greedy_assoc = False, no_save = False):
+def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
     start_time = time.time()
     active_tracklets = []
     deceased_tracklets = []
@@ -156,16 +160,23 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, min_hits = 5, greedy_assoc = F
 
         #detection had no match, create new tracklet
         for det_i in unassigned_det_indices:
-            new_tracket = SortTracklet(id_counter, frame_pred[det_i], i)
+            new_tracklet = SortTracklet(id_counter, frame_pred[det_i], i, probation_timer)
             id_counter += 1
-            active_tracklets.append(new_tracket)
+            active_tracklets.append(new_tracklet)
 
         #clean up dead tracklets
         for track_i in range(len(active_tracklets) - 1, -1, -1):
             track = active_tracklets[track_i]
+
+            if track_i in unassigned_track_indices and track.timer > 0: #tracklet has had a miss before timer is up
+                active_tracklets.pop(track_i)
+
             if track.miss_streak >= t_lost:
                 deceased_tracklets.append(track)
                 active_tracklets.pop(track_i)
+
+        for tracklet in active_tracklets: #adjust the timer of each tracklet that survived
+            tracklet.dec_timer()
 
     #remove tracklets that did not meet the requirement minimum number of hits
     combined_tracklets = deceased_tracklets + active_tracklets

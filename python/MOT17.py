@@ -51,7 +51,7 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
 
     config = configparser.ConfigParser()
     config.read("MOT17/" + set_folder + "/" + vid_name + "-FRCNN/seqinfo.ini")
-    im_shape = (int(conf["Sequence"]["imHeight"]), int(conf["Sequence"]["imWidth"]))
+    im_shape = (int(config["Sequence"]["imHeight"]), int(config["Sequence"]["imWidth"]))
 
     tracklets = {}
     for frame, id, top_left_x, top_left_y, width, height, is_person, class_number, conf in gts:
@@ -95,9 +95,13 @@ def vid_names_by_set(data_set = "train"):
 
 
 if __name__ == "__main__":
+    #create_MOT17_videos()
+    
     #test_mot_detector()
 
-    vid = Video("MOT17/videos/MOT17-02.mp4")
-    ts = MOT17_gt_tracklet(vid)
-    ts.draw_tracklets()
-    ts.video.play()
+    #vid = Video("MOT17/videos/MOT17-02.mp4")
+    #ts = MOT17_gt_tracklet(vid)
+    #ts.draw_tracklets()
+    #ts.video.play()
+
+    pass
