@@ -5,7 +5,7 @@ import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
+from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds, draw_single_tracklet
 
 """Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
    Simple online and realtime tracking. In 2016 IEEE international conference on image processing
@@ -81,14 +81,16 @@ class KalmanTracker():
     
 
 class SortTracklet(Tracklet):
-    def __init__(self, id, initial_box, initial_frame_index, timer):
-        super().__init__(id)
+    def __init__(self, track_id, initial_box, initial_frame_index, timer):
+        super().__init__(track_id)
         self.kf_tracker = KalmanTracker(initial_box)
         self.miss_streak = 0
         self.hits = 1
         self.timer = timer
-
+        
         self.add_box(initial_box, initial_frame_index)
+
+        self.kalman_state_tracklet = Tracklet(-track_id)
 
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
@@ -117,6 +119,9 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits 
     for i, frame in tqdm(list(enumerate(video)), bar_format="{l_bar}{bar:30}{r_bar}"):
         frame_pred = model.xywhcl(frame)
         tracklet_predictions = [t.kalman_predict() for t in active_tracklets]
+
+        for t, state_est in zip(active_tracklets, tracklet_predictions):
+            t.kalman_state_tracklet.add_box(state_est, i, frame.shape)
 
         tracklet_indices, detection_indices = [], []
         unassigned_track_indices, unassigned_det_indices = [], []
@@ -192,3 +197,12 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits 
     print(f"{len(combined_tracklets)} tracklets kept")
     if not no_save: save_VOD(ts, "SORT")
     return ts
+
+
+def play_sort_with_kf(ts):
+    """Draws the tracklet set (and the kf state tracklets) onto its video"""
+    for tracklet in ts:
+        kf_tracklet = tracklet.kalman_state_tracklet
+        draw_single_tracklet(ts.video, kf_tracklet, "", (255, 255, 255))
+
+    ts.video.play(1080, start_paused = True)

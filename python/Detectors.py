@@ -109,8 +109,8 @@ def create_brackish_model(cuda = None):
     bot = YoloV5ObjectDetector("models/brackishMOT_botV1.pt",
                                 ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish"],
                                 [(212, 70, 200), (29, 32, 224), (224, 112, 20), (231, 235, 19), (204, 16, 16), (48, 219, 29)],
-                                conf = 0.2,
-                                iou = 0.3,
+                                conf = 0.3,
+                                iou = 0.4,
                                 cuda = cuda
                                 )
     

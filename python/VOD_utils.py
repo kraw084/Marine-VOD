@@ -176,6 +176,11 @@ class TrackletSet:
         return val
 
 
+def draw_single_tracklet(video, tracklet, label, colour):
+    for frame_index, box in tracklet:
+        draw_box(video.frames[frame_index], box, label, colour, tracklet.id)
+
+
 def save_VOD(ts, VOD_method_name):
     print("Saving result . . .")
     ts.draw_tracklets()
@@ -410,7 +415,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
                         id_switches += 1
                         corresponding_id[gt_tracklet_id] = pred_tracklet_id
 
-                dist += 1 - iou(gt_boxes_by_frame[i][gt_index], preds_by_frame[i][pred_index])
+                dist += iou(gt_boxes_by_frame[i][gt_index], preds_by_frame[i][pred_index])
                 total_matches += 1
 
                 gt_detection_lifetimes[gt_tracklet_id] += 1

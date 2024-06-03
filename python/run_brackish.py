@@ -29,7 +29,7 @@ if __name__ == "__main__":
     ids = id_by_set(data_set)
     print(f"{len(ids)} ids in set {data_set}")
 
-    components = np.zeros((10,))
+    components = np.zeros((11,))
 
     for id in ids:
         vid_name = f"brackishMOT-{id:02}.mp4"
@@ -51,12 +51,15 @@ if __name__ == "__main__":
         #get sort tracklets
         if enable_SORT:
             vid4 = Video(brackish_video_folder + vid_name)
-            #sort_tracklet_set = frame_skipping(vid4, SORT, brackish_bot, 1, iou_min=0.3, t_lost=5, min_hits=12, greedy_assoc=True, silence=True)
-            sort_tracklet_set = SORT(brackish_bot, vid4, 0.3, 5, 12, True, True, silence=True)
+            sort_tracklet_set = SORT(brackish_bot, vid4, iou_min=0.3, t_lost=5, probation_timer=3, 
+                                     min_hits=12, greedy_assoc=True, no_save=True, silence=True)
 
 
         target_tracklets = sort_tracklet_set
-        gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, True)[-2:]
+
+        *metrics, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_correct_ids=True)
+        print_metrics(*metrics)
+
         gt_tracklets.draw_tracklets(gt_ids)
         target_tracklets.draw_tracklets(pred_ids)
 
@@ -64,7 +67,6 @@ if __name__ == "__main__":
         stitched_vid.play(1500, start_paused=True)
         
         comp = single_vid_metrics(gt_tracklets, target_tracklets, return_components=True)  
-        print_metrics(*metrics_from_components(comp))
         components += comp
         
     print("Overall metrics:")

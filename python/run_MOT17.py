@@ -7,7 +7,7 @@ from Detectors import create_MOT_model
 from Video_utils import Video, stitch_video
 from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
                        TrackletSet, frame_skipping, single_vid_metrics, print_metrics, 
-                       save_VOD, metrics_from_components)
+                       save_VOD, metrics_from_components, draw_single_tracklet)
 
 from SeqNMS import Seq_nms
 from sort import SORT
@@ -24,15 +24,15 @@ if __name__ == "__main__":
     enable_seqNMS = False
     enable_SORT = True
 
-    compare_to_gt = True
-
+    compare_to_gt = False
     overall_metrics = False
-    components = np.zeros((11,))
 
+
+    components = np.zeros((11,))
     start = 2
     end = len(names)
-
     count = 0
+
     for vid_name in names:
         count += 1
         if count - 1 <= start:
@@ -80,6 +80,11 @@ if __name__ == "__main__":
             components += metrics
         else:
             target_tracklets.draw_tracklets()
+
+            for tracklet in target_tracklets:
+                kf_tracklet = tracklet.kalman_state_tracklet
+                draw_single_tracklet(target_tracklets.video, kf_tracklet, "", (255, 255, 255))
+
             target_tracklets.video.play(1080, start_paused = True)
 
 

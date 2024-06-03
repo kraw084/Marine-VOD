@@ -9,7 +9,7 @@ from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets,
                        save_VOD, metrics_from_components)
 
 from SeqNMS import Seq_nms
-from sort import SORT
+from sort import SORT, play_sort_with_kf
 
 if __name__ == "__main__":
     count = 0
@@ -28,10 +28,11 @@ if __name__ == "__main__":
         #seqNMSTracklets = Seq_nms(urchin_bot, vid)
         #seqNMSTracklets.video.play(1500, start_paused=True)
 
-        sortTracklets = frame_skipping(vid, SORT, urchin_bot, 1, iou_min=0.3, t_lost=8, min_hits=10)
-        sortTracklets.draw_tracklets()
-        sortTracklets.video.play(1500, start_paused=True)
-        #save_VOD(sortTracklets, "SORT")
+        sortTracklets = SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=10, greedy_assoc=False, no_save=True)
+        #sortTracklets.draw_tracklets()
+        #sortTracklets.video.play(1500, start_paused=True)
+
+        play_sort_with_kf(sortTracklets)
 
         count += 1
         if count > 5: break
