@@ -201,6 +201,8 @@ def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits 
 
 def play_sort_with_kf(ts):
     """Draws the tracklet set (and the kf state tracklets) onto its video"""
+    ts.draw_tracklets()
+
     for tracklet in ts:
         kf_tracklet = tracklet.kalman_state_tracklet
         draw_single_tracklet(ts.video, kf_tracklet, "", (255, 255, 255))

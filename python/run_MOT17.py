@@ -10,7 +10,7 @@ from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets,
                        save_VOD, metrics_from_components, draw_single_tracklet)
 
 from SeqNMS import Seq_nms
-from sort import SORT
+from sort import SORT, play_sort_with_kf
 
 from MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
 
     components = np.zeros((11,))
-    start = 2
+    start = 0
     end = len(names)
     count = 0
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
         if enable_SORT:
             vid4 = load_MOT17_video(vid_name, data_set)
-            sort_tracklets = SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=5, probation_timer=1, min_hits=5, no_save=True, silence=False)
+            sort_tracklets = SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = sort_tracklets
 
         if enable_gt and compare_to_gt:
@@ -79,13 +79,10 @@ if __name__ == "__main__":
             #print_metrics(*metrics_from_components(metrics))
             components += metrics
         else:
-            target_tracklets.draw_tracklets()
+            #target_tracklets.draw_tracklets()
+            #target_tracklets.video.play(1080, start_paused = True)
 
-            for tracklet in target_tracklets:
-                kf_tracklet = tracklet.kalman_state_tracklet
-                draw_single_tracklet(target_tracklets.video, kf_tracklet, "", (255, 255, 255))
-
-            target_tracklets.video.play(1080, start_paused = True)
+            play_sort_with_kf(target_tracklets)
 
 
     if enable_gt and overall_metrics:
