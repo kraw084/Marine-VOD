@@ -4,13 +4,13 @@ from filterpy.kalman import KalmanFilter
 import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
+import cv2
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds, draw_single_tracklet
+from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
 
 
-"""Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
-   Simple online and realtime tracking. In 2016 IEEE international conference on image processing
-   (ICIP) (pp. 3464-3468). IEEE."""
+"""Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 
+arXiv preprint arXiv:2206.14651."""
 
 
 class BoTKalmanTracker():
@@ -195,3 +195,49 @@ def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_h
     print(f"{len(combined_tracklets)} tracklets kept")
     if not no_save: save_VOD(ts, "BoT-SORT")
     return ts
+
+
+
+class CameraMotionCompensation:
+    def __init__(self):
+        self.previous_points = None
+        self.prev_frame_grey = None
+
+    def find_transform(self, new_frame):
+        new_frame_grey = cv2.cvtColor(new_frame, cv2.COLOR_RGB2GRAY)
+        new_points = cv2.goodFeaturesToTrack(new_frame_grey, maxCorners=1000, qualityLevel=0.01, 
+                                             minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
+        
+        if self.previous_points is None:
+            self.previous_points = new_points
+            self.prev_frame_grey = new_frame_grey
+
+        moved_points, status, err = cv2.calcOpticalFlowPyrLK(self.prev_frame_grey, new_frame_grey, self.previous_points, None)
+       
+        indicies_to_keep = [i for i in range(status.shape[0]) if status[i] == 1]
+        
+        prev_points_keep = self.previous_points[indicies_to_keep]
+        moved_points_keep = moved_points[indicies_to_keep]
+
+        affine_mat, _ = cv2.estimateAffine2D(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
+
+        self.previous_points = new_points
+        self.prev_frame_grey = new_frame_grey
+
+        return affine_mat
+
+from MOT17 import load_MOT17_video
+vid = load_MOT17_video("MOT17-13", "train")
+
+print("Starting")
+GMC = CameraMotionCompensation()
+GMC.find_transform(vid.frames[0])
+
+for i in range(1, 5):
+    mat = GMC.find_transform(vid.frames[i])
+    aligned = cv2.warpAffine(vid.frames[1], mat, vid.frames[0].shape[::-1][:2])
+    
+
+output = cv2.addWeighted(vid.frames[0], 0.5, vid.frames[1], 0.5, 0)
+cv2.imshow("test", output)
+cv2.waitKey()

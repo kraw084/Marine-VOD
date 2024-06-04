@@ -1,7 +1,7 @@
 import torch
 
 class Config:
-    drive = "E" #what drive to find files on (D or E)
+    drive = "D" #what drive to find files on (D or E)
     cuda = torch.cuda.is_available() #use cuda or not
 
     draw_labels = True #draw labels when drawing bounding boxes
