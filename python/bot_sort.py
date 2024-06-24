@@ -219,7 +219,8 @@ class CameraMotionCompensation:
         prev_points_keep = self.previous_points[indicies_to_keep]
         moved_points_keep = moved_points[indicies_to_keep]
 
-        affine_mat, _ = cv2.estimateAffine2D(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
+        #affine_mat, _ = cv2.estimateAffine2D(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
+        affine_mat, _ = cv2.findHomography(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
 
         self.previous_points = new_points
         self.prev_frame_grey = new_frame_grey
@@ -227,17 +228,44 @@ class CameraMotionCompensation:
         return affine_mat
 
 from MOT17 import load_MOT17_video
-vid = load_MOT17_video("MOT17-13", "train")
+from Video_utils import resize_image, Video
+#vid = load_MOT17_video("MOT17-10", "train")
+
+vid = Video(r"D:\urchin video\All\DSC_7915.mp4")
 
 print("Starting")
 GMC = CameraMotionCompensation()
 GMC.find_transform(vid.frames[0])
 
-for i in range(1, 5):
-    mat = GMC.find_transform(vid.frames[i])
-    aligned = cv2.warpAffine(vid.frames[1], mat, vid.frames[0].shape[::-1][:2])
-    
+w = vid.frames[0].shape[1]
+h = vid.frames[0].shape[0]
+canvas_size = (3 *h, 3 * w, 3)
 
-output = cv2.addWeighted(vid.frames[0], 0.5, vid.frames[1], 0.5, 0)
-cv2.imshow("test", output)
-cv2.waitKey()
+prev = np.zeros(canvas_size, dtype=np.uint8)
+prev[h:2*h, w:2*w] = vid.frames[0]
+cv2.imshow("im", resize_image(cv2.cvtColor(prev, cv2.COLOR_RGB2BGR), 1300))
+cv2.waitKey(0)
+
+prev_mat = np.eye(3)
+
+
+for i in range(1, vid.num_of_frames):
+    mat = GMC.find_transform(vid.frames[i])
+    #mat = np.array([*mat, [0, 0, 1]])
+    mat = mat @ prev_mat
+    prev_mat = np.copy(mat)
+    mat[:, 2] += np.array([w, h, 0])
+
+    #aligned = cv2.warpAffine(vid.frames[i], mat[:2, :], canvas_size[::-1][1:])
+    aligned = cv2.warpPerspective(vid.frames[i], mat, canvas_size[::-1][1:])
+    #cv2.imshow("Aligned im", resize_image(cv2.cvtColor(aligned, cv2.COLOR_RGB2BGR), 1300))
+    #cv2.waitKey(0)
+    
+    new_im_mask = np.any(aligned != [0, 0, 0], axis=-1).astype(np.uint8)
+    prev -= np.multiply(np.dstack([new_im_mask] * 3), prev)
+    prev += aligned
+    
+    cv2.imshow("Merged im", resize_image(cv2.cvtColor(prev, cv2.COLOR_RGB2BGR), 1300))
+    cv2.waitKey(5)
+
+
