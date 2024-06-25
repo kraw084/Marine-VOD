@@ -16,7 +16,7 @@ if __name__ == "__main__":
     urchin_bot =  create_urchin_model(Config.cuda)
     urchin_video_folder = f"{Config.drive}:/urchin video/All/"
 
-    start = 2
+    start = 1
     count = 0
     for vid_name in os.listdir(urchin_video_folder):
         count += 1
@@ -28,6 +28,9 @@ if __name__ == "__main__":
         print("Finished loading video")
         #vid.play()
 
+        #from cmc import show_flow
+        #show_flow(vid)
+        #continue
         #frame_by_frame_VOD(urchin_bot, vid)
         #vid.play(1500)
 

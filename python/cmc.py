@@ -93,24 +93,76 @@ def cmc_registration(vid_path, affine=True):
     new_vid.play(1500, start_paused=True)
 
 
-def draw_flow(im, start_points, end_points):
+def draw_flow_arrows(im, start_points, end_points):
+    """Takes a set of feature points and moved points (from flow calculations) and draws the vectors onto the image"""
     for p1, p2 in zip(start_points, end_points):
-        arrow_dir = np.array(p2) - np.array(p1)
+        if len(start_points[0].shape) == 2:
+            p1 = p1[0]
+            p2 = p2[0]
+
+        #use the angle of the vector to determine its colour
+        arrow_dir = (p2 - p1)
         length = np.linalg.norm(arrow_dir)
-        angle = 2*np.pi - np.arccos(arrow_dir[0]/length)
-        if arrow_dir[1] > 0: angle = 2 * np.pi - angle
-        angle /= 2 * np.pi
+
+        if length == 0:
+            angle = 0
+        else:
+            angle = 2*np.pi - np.arccos(arrow_dir[0]/length)
+            if arrow_dir[1] > 0: angle = 2 * np.pi - angle
+            angle /= 2 * np.pi
 
         col = colorsys.hsv_to_rgb(1 - angle, 1, 1)
-        col = (round(255 * col[2]), round(255 * col[1]), round(255 * col[0]))
+        col = (round(255 * col[0]), round(255 * col[1]), round(255 * col[2]))
 
-        cv2.arrowedLine(im, p1, p2, col, 5)
+        #draw the arrow
+        p1 = p1.astype(int)
+        p2 = p2.astype(int)
+        cv2.arrowedLine(im, (p1[0], p1[1]), (p2[0], p2[1]), col, 2, line_type=cv2.LINE_AA)
 
-    #image = np.zeros((500, 500, 3), dtype=np.uint8)
-    #center = (250, 250)
-    #circle_points = [(round(150 * np.cos(theta)) + 250, round(150 * np.sin(theta)) + 250) for theta in np.linspace(0, 2*np.pi, 2**4 + 1)]
 
-    #draw_flow(image, [center] * len(circle_points), circle_points)
+def draw_flow_colour_indicator(im, center, length, num):
+    """Draw a set of vectors in a circle to indicate what colours corrospond to what angles"""
+    #Draw black rectangle to place indicator on
+    cv2.rectangle(im, (round(center[0] - length * 1.1), round(center[1] - length * 1.1)), 
+                      (round(center[0] + length * 1.1), round(center[1] + length * 1.1)),
+                      (0, 0, 0), -1)
+    
+    #compute points in a circle around the center
+    circle_points = [[round(length * np.cos(theta)) + center[0], round(length * np.sin(theta)) + center[1]] for theta in np.linspace(0, 2*np.pi, num)]
+    
+    #draw arrows
+    draw_flow_arrows(im, np.array([list(center)] * num), np.array(circle_points))
 
-    #cv2.imshow("test", image)
-    #cv2.waitKey(0)
+
+def show_flow(vid):
+    """Calculates flow at every frames and draws it onto the video then plays it"""
+    prev_im = cv2.cvtColor(vid.frames[0], cv2.COLOR_RGB2GRAY)
+    prev_points = cv2.goodFeaturesToTrack(prev_im, maxCorners=1000, qualityLevel=0.01, 
+                                             minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
+    
+    for i in tqdm(range(1, vid.num_of_frames)):
+        #Calculate flow in new frame using previous frame
+        new_im = cv2.cvtColor(vid.frames[i], cv2.COLOR_RGB2GRAY)
+        moved_points, status, err = cv2.calcOpticalFlowPyrLK(prev_im, new_im, prev_points, None)
+       
+        indicies_to_keep = [i for i in range(status.shape[0]) if status[i] == 1]
+        prev_points_keep = prev_points[indicies_to_keep]
+        moved_points_keep = moved_points[indicies_to_keep]
+
+        #draw flow vectors and angle colour indicator
+        draw_flow_arrows(vid.frames[i], prev_points_keep, moved_points_keep)
+        draw_flow_colour_indicator(vid.frames[i], (100, 100), 75, 33)
+
+        #set prev varaibles for next loop
+        prev_im = new_im
+        prev_points = cv2.goodFeaturesToTrack(prev_im, maxCorners=1000, qualityLevel=0.01, 
+                                             minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
+    
+    vid.play(1200)
+
+
+if __name__ == "__main__":
+    from MOT17 import load_MOT17_video
+
+    vid = load_MOT17_video("MOT17-02")
+    show_flow(vid)
