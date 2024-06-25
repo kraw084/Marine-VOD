@@ -20,15 +20,14 @@ if __name__ == "__main__":
     names = sorted(vid_names_by_set(data_set))
     print(f"{len(names)} videos found in {data_set} set")
 
-    enable_gt = False
+    enable_gt = True
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = True
-    enable_BoTSORT = False
+    enable_BoTSORT = True
 
     compare_to_gt = False
     overall_metrics = False
-
 
     components = np.zeros((11,))
     start = 0
@@ -88,25 +87,23 @@ if __name__ == "__main__":
             #print_metrics(*metrics_from_components(metrics))
             components += metrics
         else:
-            save_VOD(target_tracklets, "SORT")
+            #save_VOD(target_tracklets, "SORT")
             #target_tracklets.draw_tracklets()
-            target_tracklets.video.play(1080, start_paused = True)
+            #target_tracklets.video.play(1080, start_paused = True)
 
-            
+            sort_tracklets.draw_tracklets()
+            bot_sort_tracklets.draw_tracklets()
 
-            #sort_tracklets.draw_tracklets()
-            #bot_sort_tracklets.draw_tracklets()
+            sort_mets = single_vid_metrics(gt_tracklets, sort_tracklets, match_iou=0.3)
+            bot_sort_mets = single_vid_metrics(gt_tracklets, bot_sort_tracklets, match_iou=0.3)
 
-            #sort_mets = single_vid_metrics(gt_tracklets, sort_tracklets, match_iou=0.3)
-            #bot_sort_mets = single_vid_metrics(gt_tracklets, bot_sort_tracklets, match_iou=0.3)
+            print("Sort:")
+            print_metrics(*sort_mets)
+            print("Bot Sort:")
+            print_metrics(*bot_sort_mets)
 
-            #print("Sort:")
-            #print_metrics(*sort_mets)
-            #print("Bot Sort:")
-            #print_metrics(*bot_sort_mets)
-
-            #stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot-sort.mp4")
-            #stitched_video.play(1500, start_paused = True)
+            stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot-sort.mp4")
+            stitched_video.play(1400, start_paused = True)
 
 
 

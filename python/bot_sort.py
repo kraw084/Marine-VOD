@@ -7,6 +7,7 @@ from scipy.optimize import linear_sum_assignment
 import cv2
 
 from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
+from cmc import CameraMotionCompensation
 
 
 """Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 
@@ -62,20 +63,45 @@ class BoTKalmanTracker():
         self.kf.x[:4] = initial_box[:4].reshape((4, 1))
 
     
-    def predict(self):
+    def predict(self, mat=None):
         #if scale velocity would make scale negative, set scale velocity to 0
         if self.kf.x[2] + self.kf.x[6] <= 0: self.kf.x[6] = 0
 
         self.kf.predict()
-        predicted_state = self.kf.x
 
+        if not mat is None: #if a transformation mat is supplied use it on kf prediction
+            self.apply_transform(mat)
+
+        predicted_state = self.kf.x
         return predicted_state[:4].reshape((4,))
     
+
     def update(self, box):
         self.kf.update(box[:4].reshape((4, 1)))
         updated_state = self.kf.x
 
         return updated_state[:4].reshape((4,))
+    
+
+    def apply_transform(self, mat):
+        #extract components of the transformation matrix
+        M = mat[:2, :2]
+        if mat.shape[0] == 2: #affine transform
+            translation_vector = mat[:, 2]
+        else: #homography
+            M /= mat[2, 2]
+            translation_vector = mat[:2, 2]
+
+        M_diag = np.zeros((8, 8))
+        for i in range(4):
+            M_diag[i:i+2, i:i+2] = M
+
+        #update state vector
+        self.kf.x = M_diag @ self.kf.x
+        self.kf.x[:2, 0] += translation_vector
+
+        #update covariance mat
+        self.kf.P = M_diag @ self.kf.P @ M_diag.T
     
 
 class BoTSortTracklet(Tracklet):
@@ -90,8 +116,8 @@ class BoTSortTracklet(Tracklet):
 
         self.kalman_state_tracklet = Tracklet(-track_id)
 
-    def kalman_predict(self):
-        predicted_box = self.kf_tracker.predict()
+    def kalman_predict(self, mat = None):
+        predicted_box = self.kf_tracker.predict(mat)
         conf = self.boxes[-1][4]
         label = self.boxes[-1][5]
         return np.array([*predicted_box, conf, label])
@@ -113,10 +139,14 @@ def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_h
     deceased_tracklets = []
     id_counter = 0
 
+    cam_comp = CameraMotionCompensation()
+
     print("Starting BoT-SORT")
     for i, frame in tqdm(list(enumerate(video)), bar_format="{l_bar}{bar:30}{r_bar}"):
         frame_pred = model.xywhcl(frame)
-        tracklet_predictions = [t.kalman_predict() for t in active_tracklets]
+
+        cam_comp_mat = cam_comp.find_transform(frame)
+        tracklet_predictions = [t.kalman_predict(cam_comp_mat) for t in active_tracklets]
 
         for t, state_est in zip(active_tracklets, tracklet_predictions):
             t.kalman_state_tracklet.add_box(state_est, i, frame.shape)
