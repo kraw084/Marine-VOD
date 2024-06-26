@@ -58,7 +58,7 @@ class YoloV5ObjectDetector:
 
 
 class PublicDetectionsDetector:
-    def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45):
+    def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45, data_set=None):
         self.conf = conf
 
         self.num_to_class = classes
@@ -67,13 +67,28 @@ class PublicDetectionsDetector:
         self.vid_name = vid_name
         self.detector = detector
 
+        self.data_set = data_set
+
         if detector not in ("DPM", "FRCNN", "SDP"): raise ValueError("detector must be DPM, FRCNN or SDP")
         set_folder = "train" if os.path.isdir(f"MOT17/train/{vid_name}-{detector}") else "test"
         det_file = open(f"MOT17/{set_folder}/{vid_name}-{detector}/det/det.txt")
         self.dets = [tuple([float(num) for num in line.strip("/n").split(",")]) for line in det_file.readlines()]
         det_file.close()
 
-        self.frame_counter = 0
+        #whole video
+        self.frame_counter_init = 0
+        self.max_frame = max([d[0] for d in self.dets])
+
+        #first half of video
+        if self.data_set == "train":
+            self.max_frame = (self.max_frame//2) - 1
+
+        #second half of video
+        if self.data_set == "val":
+            self.frame_counter_init = (self.max_frame + 1)//2
+
+        
+        self.frame_counter = self.frame_counter_init
 
     def update_parameters(self, conf=0.45, iou=0.6):
         self.conf = conf
@@ -94,6 +109,9 @@ class PublicDetectionsDetector:
             frame_dets.append(box)
 
         self.frame_counter += 1
+
+        if self.frame_counter > self.max_frame:
+            self.frame_counter = self.frame_counter_init
 
         return frame_dets
 
@@ -118,8 +136,8 @@ def create_brackish_model(cuda = None):
     return bot
 
 
-def create_MOT_model(vid_name):
-    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6)
+def create_MOT_model(vid_name, data_set = None):
+    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, data_set=data_set)
 
 
 if __name__ == "__main__":

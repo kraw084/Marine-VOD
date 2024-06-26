@@ -16,18 +16,18 @@ from bot_sort import BoT_SORT
 from MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
 if __name__ == "__main__":
-    data_set = "train"
+    data_set = "val"
     names = sorted(vid_names_by_set(data_set))
     print(f"{len(names)} videos found in {data_set} set")
 
     enable_gt = True
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = True
+    enable_SORT = False
     enable_BoTSORT = True
 
     compare_to_gt = False
-    overall_metrics = False
+    overall_metrics = True
 
     components = np.zeros((11,))
     start = 0
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
         print(vid_name)
 
-        MOT17_bot = create_MOT_model(vid_name)
+        MOT17_bot = create_MOT_model(vid_name, data_set=data_set)
 
         if enable_gt:
             vid1 = load_MOT17_video(vid_name, data_set)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
-            MOT17_bot = create_MOT_model(vid_name)
+            #MOT17_bot = create_MOT_model(vid_name)
             vid5 = load_MOT17_video(vid_name, data_set)
             bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = bot_sort_tracklets
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
         elif enable_gt and overall_metrics:
             metrics = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_components=True)
-            #print_metrics(*metrics_from_components(metrics))
+            print_metrics(*metrics_from_components(metrics))
             components += metrics
         else:
             #save_VOD(target_tracklets, "SORT")
@@ -106,7 +106,7 @@ if __name__ == "__main__":
             stitched_video.play(1400, start_paused = True)
 
 
-
     if enable_gt and overall_metrics:
         final_metrics = metrics_from_components(components)
+        print("Final metrics:")
         print_metrics(*final_metrics)

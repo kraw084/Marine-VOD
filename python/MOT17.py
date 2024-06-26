@@ -57,8 +57,14 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
     for frame, id, top_left_x, top_left_y, width, height, is_person, class_number, conf in gts:
         if is_person == 0: continue
         if conf < conf_threshold: continue 
+
         if data_set == "train" and frame > vid.num_of_frames: continue
-        if data_set == "val" and frame <= vid.num_of_frames: continue
+
+        if data_set == "val" and frame <= vid.num_of_frames: 
+            continue
+        elif data_set == "val":
+            frame -= vid.num_of_frames
+    
 
         center_x = top_left_x + width/2
         center_y = top_left_y + height/2
