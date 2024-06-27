@@ -58,7 +58,7 @@ class YoloV5ObjectDetector:
 
 
 class PublicDetectionsDetector:
-    def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45, data_set=None):
+    def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45, half=0):
         self.conf = conf
 
         self.num_to_class = classes
@@ -66,8 +66,6 @@ class PublicDetectionsDetector:
 
         self.vid_name = vid_name
         self.detector = detector
-
-        self.data_set = data_set
 
         if detector not in ("DPM", "FRCNN", "SDP"): raise ValueError("detector must be DPM, FRCNN or SDP")
         set_folder = "train" if os.path.isdir(f"MOT17/train/{vid_name}-{detector}") else "test"
@@ -80,11 +78,11 @@ class PublicDetectionsDetector:
         self.max_frame = max([d[0] for d in self.dets])
 
         #first half of video
-        if self.data_set == "train":
+        if half == 1:
             self.max_frame = (self.max_frame//2) - 1
 
         #second half of video
-        if self.data_set == "val":
+        if half == 2:
             self.frame_counter_init = (self.max_frame + 1)//2
 
         
@@ -136,8 +134,8 @@ def create_brackish_model(cuda = None):
     return bot
 
 
-def create_MOT_model(vid_name, data_set = None):
-    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, data_set=data_set)
+def create_MOT_model(vid_name, half=0):
+    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, half=half)
 
 
 if __name__ == "__main__":

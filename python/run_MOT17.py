@@ -7,7 +7,7 @@ from Detectors import create_MOT_model
 from Video_utils import Video, stitch_video
 from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
                        TrackletSet, frame_skipping, single_vid_metrics, print_metrics, 
-                       save_VOD, metrics_from_components, draw_single_tracklet)
+                       save_VOD, metrics_from_components, draw_single_tracklet, draw_detections)
 
 from SeqNMS import Seq_nms
 from sort import SORT, play_sort_with_kf
@@ -16,7 +16,8 @@ from bot_sort import BoT_SORT
 from MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
 if __name__ == "__main__":
-    data_set = "val"
+    data_set = "train"
+    half = 1
     names = sorted(vid_names_by_set(data_set))
     print(f"{len(names)} videos found in {data_set} set")
 
@@ -26,8 +27,8 @@ if __name__ == "__main__":
     enable_SORT = False
     enable_BoTSORT = True
 
-    compare_to_gt = False
-    overall_metrics = True
+    compare_to_gt = True
+    overall_metrics = False
 
     components = np.zeros((11,))
     start = 0
@@ -44,30 +45,30 @@ if __name__ == "__main__":
 
         print(vid_name)
 
-        MOT17_bot = create_MOT_model(vid_name, data_set=data_set)
+        MOT17_bot = create_MOT_model(vid_name, half=half)
 
         if enable_gt:
-            vid1 = load_MOT17_video(vid_name, data_set)
-            gt_tracklets = MOT17_gt_tracklet(vid1, conf_threshold=0.5, data_set=data_set)
+            vid1 = load_MOT17_video(vid_name, half)
+            gt_tracklets = MOT17_gt_tracklet(vid1, conf_threshold=0.5, half=half)
 
         if enable_fbf:
-            vid2 = load_MOT17_video(vid_name, data_set)
+            vid2 = load_MOT17_video(vid_name, half)
             fbf_tracklets = frame_by_frame_VOD_with_tracklets(MOT17_bot, vid2, True)
             target_tracklets = fbf_tracklets
 
         if enable_seqNMS:
-            vid3 = load_MOT17_video(vid_name, data_set)
+            vid3 = load_MOT17_video(vid_name, half)
             seqNMS_tracklets = frame_skipping(vid3, Seq_nms, MOT17_bot, 1, silence=True)
             target_tracklets = seqNMS_tracklets
 
         if enable_SORT:
-            vid4 = load_MOT17_video(vid_name, data_set)
+            vid4 = load_MOT17_video(vid_name, half)
             sort_tracklets = SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
             #MOT17_bot = create_MOT_model(vid_name)
-            vid5 = load_MOT17_video(vid_name, data_set)
+            vid5 = load_MOT17_video(vid_name, half)
             bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = bot_sort_tracklets
 
@@ -88,22 +89,23 @@ if __name__ == "__main__":
             components += metrics
         else:
             #save_VOD(target_tracklets, "SORT")
-            #target_tracklets.draw_tracklets()
-            #target_tracklets.video.play(1080, start_paused = True)
+            target_tracklets.draw_tracklets()
+            #draw_detections(target_tracklets.video, MOT17_bot)
+            target_tracklets.video.play(1080, start_paused = True)
 
-            sort_tracklets.draw_tracklets()
-            bot_sort_tracklets.draw_tracklets()
+            #sort_tracklets.draw_tracklets()
+            #bot_sort_tracklets.draw_tracklets()
 
-            sort_mets = single_vid_metrics(gt_tracklets, sort_tracklets, match_iou=0.3)
-            bot_sort_mets = single_vid_metrics(gt_tracklets, bot_sort_tracklets, match_iou=0.3)
+            #sort_mets = single_vid_metrics(gt_tracklets, sort_tracklets, match_iou=0.3)
+            #bot_sort_mets = single_vid_metrics(gt_tracklets, bot_sort_tracklets, match_iou=0.3)
 
-            print("Sort:")
-            print_metrics(*sort_mets)
-            print("Bot Sort:")
-            print_metrics(*bot_sort_mets)
+            #print("Sort:")
+            #print_metrics(*sort_mets)
+            #print("Bot Sort:")
+            #print_metrics(*bot_sort_mets)
 
-            stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot-sort.mp4")
-            stitched_video.play(1400, start_paused = True)
+            #stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot-sort.mp4")
+            #stitched_video.play(1400, start_paused = True)
 
 
     if enable_gt and overall_metrics:

@@ -23,7 +23,7 @@ def silence(func):
     def wrapper(*args,  silence=False, **kwargs):
         if silence:
             with contextlib.redirect_stdout(open(os.devnull, 'w')):
-                result =  func(*args, **kwargs)
+                result = func(*args, **kwargs)
                 return result
         else:
             return func(*args, **kwargs)
@@ -72,6 +72,12 @@ def draw_data(im, data_dict):
     for i, data in enumerate(data_dict):
         text = f"{data}: {data_dict[data]}"
         im = cv2.putText(im, text, (start_point[0], start_point[1] + i * gap), cv2.FONT_HERSHEY_SIMPLEX, font_size, Config.data_text_colour, thickness, cv2.LINE_AA)
+
+
+def draw_detections(vid, model):
+    for im in vid.frames:
+        dets = model.xywhcl(im)
+        annotate_image(im, dets, model.num_to_class, [(255, 255, 255)] * len(model.num_to_class))
 
 
 class Tracklet:

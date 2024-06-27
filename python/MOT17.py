@@ -42,7 +42,7 @@ def test_mot_detector():
     vid.play()
 
 
-def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
+def MOT17_gt_tracklet(vid, half=0, conf_threshold=0.5):
     vid_name = vid.name
     set_folder = "train" if os.path.isdir(f"MOT17/train/{vid_name}-FRCNN") else "test"
     gt_file = open(f"MOT17/{set_folder}/{vid_name}-FRCNN/gt/gt.txt")
@@ -55,17 +55,17 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
 
     tracklets = {}
     for frame, id, top_left_x, top_left_y, width, height, is_person, class_number, conf in gts:
-        if is_person == 0: continue
+        #if is_person == 0: continue
+        if class_number not in (1, 7): continue
         if conf < conf_threshold: continue 
 
-        if data_set == "train" and frame > vid.num_of_frames: continue
+        if half == 1 and frame > vid.num_of_frames: continue
 
-        if data_set == "val" and frame <= vid.num_of_frames: 
+        if half == 2 and frame <= vid.num_of_frames: 
             continue
-        elif data_set == "val":
+        elif half == 2:
             frame -= vid.num_of_frames
     
-
         center_x = top_left_x + width/2
         center_y = top_left_y + height/2
         box = round_box(np.array([center_x, center_y, width, height, conf, 0]))
@@ -81,11 +81,11 @@ def MOT17_gt_tracklet(vid, data_set="train", conf_threshold=0.5):
     return TrackletSet(vid, list(tracklets.values()), ["Person"])
 
 
-def load_MOT17_video(vid_name, data_set="train"):
+def load_MOT17_video(vid_name, half=0):
     vid = Video(f"MOT17/videos/{vid_name}.mp4")
-    if data_set == "train":
+    if half == 1:
         vid.set_frames(vid.frames[:vid.num_of_frames//2], vid.fps)
-    elif data_set == "val":
+    elif half == 2:
         vid.set_frames(vid.frames[vid.num_of_frames//2:], vid.fps)
 
     return vid
