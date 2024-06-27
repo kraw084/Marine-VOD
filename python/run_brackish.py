@@ -1,5 +1,5 @@
 import os
-os.environ["TQDM_DISABLE"] = "1"
+
 
 import numpy as np
 
@@ -12,7 +12,9 @@ from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets,
 
 from SeqNMS import Seq_nms
 from sort import SORT
+from bot_sort import BoT_SORT
 
+from cmc import show_flow
 from BrackishMOT import brackishMOT_tracklet, id_by_set
 
 
@@ -20,10 +22,11 @@ if __name__ == "__main__":
     brackish_bot = create_brackish_model(Config.cuda)
     brackish_video_folder = f"{Config.drive}:/Marine-VOD/BrackishMOT/videos/"
 
-    enable_gt = True
+    enable_gt = False
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = True
+    enable_SORT = False
+    enable_bot_sort = True
 
     data_set = "val"
     ids = id_by_set(data_set)
@@ -53,21 +56,29 @@ if __name__ == "__main__":
             vid4 = Video(brackish_video_folder + vid_name)
             sort_tracklet_set = SORT(brackish_bot, vid4, iou_min=0.3, t_lost=5, probation_timer=3, 
                                      min_hits=12, greedy_assoc=True, no_save=True, silence=True)
+            
+        #get bot sort tracklets
+        if enable_bot_sort:
+            vid5 = Video(brackish_video_folder + vid_name)
+            bot_sort_tracklet_set = BoT_SORT(brackish_bot, vid5, iou_min=0.3, t_lost=5, probation_timer=3, 
+                                     min_hits=12, greedy_assoc=True, no_save=True, silence=False)
 
 
-        target_tracklets = sort_tracklet_set
+        target_tracklets = bot_sort_tracklet_set
+        target_tracklets.draw_tracklets()
+        target_tracklets.video.play(1200, start_paused=True)
 
-        *metrics, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_correct_ids=True)
-        print_metrics(*metrics)
+        #*metrics, gt_ids, pred_ids = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_correct_ids=True)
+        #print_metrics(*metrics)
 
-        gt_tracklets.draw_tracklets(gt_ids)
-        target_tracklets.draw_tracklets(pred_ids)
+        #gt_tracklets.draw_tracklets(gt_ids)
+        #target_tracklets.draw_tracklets(pred_ids)
 
-        stitched_vid = stitch_video(gt_tracklets.video, target_tracklets.video, "gt_SORT.mp4")
-        stitched_vid.play(1500, start_paused=True)
+        #stitched_vid = stitch_video(gt_tracklets.video, target_tracklets.video, "gt_SORT.mp4")
+        #stitched_vid.play(1500, start_paused=True)
         
-        comp = single_vid_metrics(gt_tracklets, target_tracklets, return_components=True)  
-        components += comp
+        #comp = single_vid_metrics(gt_tracklets, target_tracklets, return_components=True)  
+        #components += comp
         
-    print("Overall metrics:")
-    print_metrics(*metrics_from_components(components))
+    #print("Overall metrics:")
+    #print_metrics(*metrics_from_components(components))

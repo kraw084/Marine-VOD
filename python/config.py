@@ -1,8 +1,10 @@
 import torch
+import os
 
 class Config:
-    drive = "E" #what drive to find files on (D or E)
+    drive = "D" #what drive to find files on (D or E)
     cuda = torch.cuda.is_available() #use cuda or not
+    os.environ["TQDM_DISABLE"] = "0"
 
     draw_labels = True #draw labels when drawing bounding boxes
     minimal_labels = True #only draw id number and conf score in label

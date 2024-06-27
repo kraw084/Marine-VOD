@@ -67,9 +67,8 @@ if __name__ == "__main__":
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
-            #MOT17_bot = create_MOT_model(vid_name)
             vid5 = load_MOT17_video(vid_name, half)
-            bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = bot_sort_tracklets
 
 

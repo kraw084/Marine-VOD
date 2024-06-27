@@ -33,7 +33,14 @@ class CameraMotionCompensation:
 
         #estimate the transformation
         if self.affine:
-            mat, _ = cv2.estimateAffine2D(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
+            mat, inliers = cv2.estimateAffine2D(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
+
+            #if the proportion of inliers is < 40% use no transformation
+            inlier_prop = [j for i in inliers for j in i]
+            inlier_prop = sum(inlier_prop)/len(inlier_prop)
+            if inlier_prop <= 0.4:
+                mat = np.eye(2)
+                mat = np.append(mat, np.zeros((2, 1)), axis=1)
         else:
             mat, _ = cv2.findHomography(prev_points_keep, moved_points_keep, method=cv2.RANSAC)
 
