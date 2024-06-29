@@ -1,13 +1,11 @@
 import numpy as np
-import math
 from filterpy.kalman import KalmanFilter
 import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
-import cv2
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
-from cmc import CameraMotionCompensation
+from ..utils.VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds
+from ..utils.Cmc import CameraMotionCompensation
 
 
 """Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 

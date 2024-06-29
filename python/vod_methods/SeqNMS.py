@@ -3,7 +3,8 @@ from tqdm import tqdm
 import time
 from itertools import product
 
-from VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD, silence, single_vid_metrics, print_metrics, frame_skipping, metrics_from_components
+from ..utils.VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD, silence
+
 
 """Han, W., Khorrami, P., Paine, T. L., Ramachandran, P., Babaeizadeh, M., Shi, H., ... & Huang, T. S. (2016). 
    Seq-nms for video object detection. arXiv preprint arXiv:1602.08465.
@@ -191,34 +192,34 @@ def Seq_nms(model, video, nms_iou = 0.6, avg_conf_th = 0.2, early_stopping_score
     return ts
 
     
-def seqNMS_grid_search(videos, gt_tracklets, detector, nms_ious, avg_conf_ths, es_score_ths):
-    best_metrics = None
-    best_mota = 0
-    best_parameters = None
-    counter = 0
-
-    for a, b, c in product(nms_ious, avg_conf_ths, es_score_ths):
-        components = np.zeros((10,))
-        for i, vid in enumerate(videos):
-            pred_tracklets = frame_skipping(vid, Seq_nms, detector, 2, nms_iou=a, avg_conf_th=b, early_stopping_score_th=c, silence=True)
-            components += single_vid_metrics(gt_tracklets[i], pred_tracklets, return_components=True)
-
-        metrics = metrics_from_components(components)
-
-        print(f"Finished search {counter} - {(a, b, c)}")
-        counter += 1
-
-        if metrics[2] > best_mota:
-            best_mota = metrics[2]
-            best_metrics = metrics
-            best_parameters = (a, b, c)
-            print("Found new best:")
-            print(best_parameters)
-            print(best_metrics)
-
-     
-
-    print(f"Grid search finished  - searched over {counter} combinations")
-    print(f"Best parameters:")
-    print(f"NMS_iou = {best_parameters[0]}, avg_conf_th = {best_parameters[1]}, early_stopping_score_th = {best_parameters[2]}")
-    print_metrics(*best_metrics)
+#def seqNMS_grid_search(videos, gt_tracklets, detector, nms_ious, avg_conf_ths, es_score_ths):
+#    best_metrics = None
+#    best_mota = 0
+#    best_parameters = None
+#    counter = 0
+#
+#    for a, b, c in product(nms_ious, avg_conf_ths, es_score_ths):
+#        components = np.zeros((10,))
+#        for i, vid in enumerate(videos):
+#            pred_tracklets = frame_skipping(vid, Seq_nms, detector, 2, nms_iou=a, avg_conf_th=b, early_stopping_score_th=c, silence=True)
+#            components += single_vid_metrics(gt_tracklets[i], pred_tracklets, return_components=True)
+#
+#        metrics = metrics_from_components(components)
+#
+#        print(f"Finished search {counter} - {(a, b, c)}")
+#        counter += 1
+#
+#        if metrics[2] > best_mota:
+#            best_mota = metrics[2]
+#           best_metrics = metrics
+#            best_parameters = (a, b, c)
+#            print("Found new best:")
+#            print(best_parameters)
+#            print(best_metrics)
+#
+#     
+#
+#    print(f"Grid search finished  - searched over {counter} combinations")
+#    print(f"Best parameters:")
+#    print(f"NMS_iou = {best_parameters[0]}, avg_conf_th = {best_parameters[1]}, early_stopping_score_th = {best_parameters[2]}")
+#    print_metrics(*best_metrics)

@@ -5,7 +5,7 @@ import time
 from tqdm import tqdm
 from scipy.optimize import linear_sum_assignment
 
-from VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds, draw_single_tracklet
+from ..utils.VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence, correct_preds, draw_single_tracklet
 
 """Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
    Simple online and realtime tracking. In 2016 IEEE international conference on image processing

@@ -1,19 +1,16 @@
-import os
-#os.environ["TQDM_DISABLE"] = "1"
-
 import numpy as np
 
-from Detectors import create_MOT_model
-from Video_utils import Video, stitch_video
-from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
-                       TrackletSet, frame_skipping, single_vid_metrics, print_metrics, 
-                       save_VOD, metrics_from_components, draw_single_tracklet, draw_detections)
+from utils.Detectors import create_MOT_model
+from utils.Video_utils import Video, stitch_video
+from utils.VOD_utils import TrackletSet, frame_skipping, print_metrics, save_VOD, draw_single_tracklet
+from utils.Eval_utils import single_vid_metrics, metrics_from_components, print_metrics
+from datasets.MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
-from SeqNMS import Seq_nms
-from sort import SORT, play_sort_with_kf
-from bot_sort import BoT_SORT
+from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets
+from vod_method.SeqNMS import Seq_nms
+from vod_method.sort import SORT, play_sort_with_kf
+from vod_method.bot_sort import BoT_SORT
 
-from MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
 if __name__ == "__main__":
     data_set = "train"

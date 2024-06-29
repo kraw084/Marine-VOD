@@ -7,8 +7,9 @@ import configparser
 import random
 import math
 import sys
-from Video_utils import Video, frames_to_video
-from VOD_utils import Tracklet, TrackletSet
+
+from ..utils.Video_utils import Video, frames_to_video
+from ..utils.VOD_utils import Tracklet, TrackletSet
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)
