@@ -1,6 +1,3 @@
 [submodule "yolov5"]
 	path = yolov5
 	url = https://github.com/kraw084/yolov5.git
-[submodule "TrackEval"]
-	path = TrackEval
-	url = https://github.com/kraw084/TrackEval.git
