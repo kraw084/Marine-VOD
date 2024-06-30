@@ -1,6 +1,12 @@
 import numpy as np
+import os
+import sys
 
-from VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.append(project_dir)
+from TrackEval.scripts.run_mot_challenge import main
+
+#from VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
 
 
 def correct_preds(gt, preds, iou=0.5):
@@ -30,6 +36,7 @@ def correct_preds(gt, preds, iou=0.5):
         correct[match_indices[:, 1]] = True
 
     return correct, match_indices
+
 
 def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_correct_ids = False, return_components = False):
     """Calculates multiple metrics using a set of ground truth tracklets
@@ -153,3 +160,28 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print(f"MT: {round(mt, 3)}, PT: {round(pt, 3)}, ML: {round(ml, 3)}")
     print(f"IDSW: {round(id_switchs, 3)}, FM: {frag}")
     print("-------------------------------------")
+
+
+def track_eval(tracker_name = "MPNTrack", test_name = "", metrics = None):
+    if metrics is None:
+        metrics = ["HOTA", "CLEAR"]
+
+    main(METRICS = metrics,
+         BENCHMARK = "MOT17",
+         SPLIT_TO_EVAL = "train",
+         TRACKERS_TO_EVAL = [tracker_name],
+         CLASSES_TO_EVAL = ["pedestrian"],
+         DO_PREPROC = "True",
+
+         TRACKERS_FOLDER =  "TrackEval/data/trackers/mot_challenge",
+         OUTPUT_FOLDER = "TrackEval_results",
+         OUTPUT_SUB_FOLDER = test_name,
+         
+         #USE_PARALLEL = "True",
+         #NUM_PARALLEL_CORES = "2",
+         PRINT_CONFIG = "False",
+         )
+
+
+
+track_eval(test_name="exp1")

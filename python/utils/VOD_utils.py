@@ -7,7 +7,7 @@ import colorsys
 import math
 import contextlib
 
-project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
 

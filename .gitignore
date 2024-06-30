@@ -1,8 +1,10 @@
 venv/
 .vscode/
 python/__pycache__/
+python/utils/__pycache__/
 BrackishMOT/
 MOT17/
 yolov5s.pt
 yolov5n.pt
 results/*.mp4
+TrackEval_results/
