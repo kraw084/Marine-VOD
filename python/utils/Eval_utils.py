@@ -6,7 +6,7 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-#from VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+from VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
 
 
 def correct_preds(gt, preds, iou=0.5):
@@ -162,26 +162,37 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print("-------------------------------------")
 
 
-def track_eval(tracker_name = "MPNTrack", test_name = "", metrics = None):
+def track_eval(tracker_name = "MPNTrack", test_name = "", dataset_name = "MOT17", split = "train", metrics = None):
     if metrics is None:
         metrics = ["HOTA", "CLEAR"]
 
-    main(METRICS = metrics,
-         BENCHMARK = "MOT17",
-         SPLIT_TO_EVAL = "train",
-         TRACKERS_TO_EVAL = [tracker_name],
-         CLASSES_TO_EVAL = ["pedestrian"],
-         DO_PREPROC = "True",
+    if dataset_name == "MOT17":
+        bench = "MOT17"
+        preproc = "True"
+        classes = ["pedestrian"]
+        gt_dir = "TrackEval/data/gt/mot_challenge/"
+    elif dataset_name == "BrackishMOT":
+        bench = "BrackishMOT"
+        preproc = "False"
+        classes = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", "UNKNOWN"]
+        gt_dir = "BrackishMOT/"
 
+    main(METRICS = metrics,
+         BENCHMARK = bench,
+         SPLIT_TO_EVAL = split,
+         TRACKERS_TO_EVAL = [tracker_name],
+         CLASSES_TO_EVAL = classes,
+         DO_PREPROC = preproc,
+         THRESHOLD = "0.5",
+
+         GT_FOLDER = gt_dir,
          TRACKERS_FOLDER =  "TrackEval/data/trackers/mot_challenge",
+         TRACKER_SUB_FOLDER = "data/FRCNN",
          OUTPUT_FOLDER = "TrackEval_results",
          OUTPUT_SUB_FOLDER = test_name,
          
          #USE_PARALLEL = "True",
          #NUM_PARALLEL_CORES = "2",
          PRINT_CONFIG = "False",
+         TIME_PROGRESS = "False"
          )
-
-
-
-track_eval(test_name="exp1")
