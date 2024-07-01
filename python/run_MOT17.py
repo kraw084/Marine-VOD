@@ -2,29 +2,29 @@ import numpy as np
 
 from utils.Detectors import create_MOT_model
 from utils.Video_utils import Video, stitch_video
-from utils.VOD_utils import TrackletSet, frame_skipping, print_metrics, save_VOD, draw_single_tracklet
-from utils.Eval_utils import single_vid_metrics, metrics_from_components, print_metrics
+from utils.VOD_utils import TrackletSet, frame_skipping, save_VOD, draw_single_tracklet
+from utils.Eval_utils import single_vid_metrics, metrics_from_components, print_metrics, save_track_result
 from datasets.MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
 from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets
-from vod_method.SeqNMS import Seq_nms
-from vod_method.sort import SORT, play_sort_with_kf
-from vod_method.bot_sort import BoT_SORT
+from vod_methods.SeqNMS import Seq_nms
+from vod_methods.sort import SORT, play_sort_with_kf
+from vod_methods.bot_sort import BoT_SORT
 
 
 if __name__ == "__main__":
     data_set = "train"
-    half = 1
+    half = 0
     names = sorted(vid_names_by_set(data_set))
     print(f"{len(names)} videos found in {data_set} set")
 
-    enable_gt = True
+    enable_gt = False
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = False
-    enable_BoTSORT = True
+    enable_SORT = True
+    enable_BoTSORT = False
 
-    compare_to_gt = True
+    compare_to_gt = False
     overall_metrics = False
 
     components = np.zeros((11,))
@@ -84,10 +84,12 @@ if __name__ == "__main__":
             print_metrics(*metrics_from_components(metrics))
             components += metrics
         else:
+            save_track_result(target_tracklets, vid_name, "SORT", "init_test")
+
             #save_VOD(target_tracklets, "SORT")
-            target_tracklets.draw_tracklets()
+            #target_tracklets.draw_tracklets()
             #draw_detections(target_tracklets.video, MOT17_bot)
-            target_tracklets.video.play(1080, start_paused = True)
+            #target_tracklets.video.play(1080, start_paused = True)
 
             #sort_tracklets.draw_tracklets()
             #bot_sort_tracklets.draw_tracklets()

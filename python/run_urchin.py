@@ -9,7 +9,6 @@ from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklet
 from vod_methods.SeqNMS import Seq_nms
 from vod_methods.sort import SORT, play_sort_with_kf
 from vod_methods.bot_sort import BoT_SORT
-from vod_methods.cmc import show_flow
 
 if __name__ == "__main__":
 
@@ -27,8 +26,6 @@ if __name__ == "__main__":
         vid = Video(urchin_video_folder + vid_name)
         print("Finished loading video")
 
-
-        #show_flow(vid)
 
         sort_tracklets = SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
 

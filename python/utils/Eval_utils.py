@@ -6,7 +6,7 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-from VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+from .VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, Tracklet
 
 
 def correct_preds(gt, preds, iou=0.5):
@@ -160,6 +160,33 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print(f"MT: {round(mt, 3)}, PT: {round(pt, 3)}, ML: {round(ml, 3)}")
     print(f"IDSW: {round(id_switchs, 3)}, FM: {frag}")
     print("-------------------------------------")
+
+
+def save_track_result(trackletSet, seq_name, tracker_name, sub_name=""):
+    #setup directories if they dont exist
+    if not os.path.isdir(f"TrackEval_results/{tracker_name}"):
+        os.mkdir(f"TrackEval_results/{tracker_name}")
+
+    if sub_name and not os.path.isdir(f"TrackEval_results/{tracker_name}/{sub_name}"):
+        os.mkdir(f"TrackEval_results/{tracker_name}/{sub_name}")
+
+    target_dir = f"TrackEval_results/{tracker_name}/{sub_name}" if sub_name else f"TrackEval_results/{tracker_name}"
+
+    f = open(target_dir + f"/{seq_name}.txt", "w")
+
+    for t in trackletSet:
+        id = t.id
+        for frame_i, box in t:
+            x = box[0] - box[2]/2
+            y = box[1] - box[3]/2
+            w = box[2]
+            h = box[3]
+            conf = box[4]
+            to_write = ", ".join(map(str, [frame_i + 1, id, x, y, w, h, conf, -1, -1, -1]))
+            f.write(to_write + "\n")
+
+    f.close()
+    print("Tracklet results saved")
 
 
 def track_eval(tracker_name = "MPNTrack", test_name = "", dataset_name = "MOT17", split = "train", metrics = None):

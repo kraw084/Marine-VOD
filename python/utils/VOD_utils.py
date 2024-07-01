@@ -7,12 +7,14 @@ import colorsys
 import math
 import contextlib
 
+from .Video_utils import Video
+from .Config import Config
+
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
 
-from Video_utils import Video
-from Config import Config
+
 
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
@@ -41,6 +43,7 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, ids=None):
 
 def draw_box(im, box, label, colour, id = None):
     """Draws a single box onto an image"""
+    box = round_box(box)
     box_thickness = 3
     text_thickness = math.floor(3 * Config.label_font_thickness)
     font_size = 1 * Config.label_font_size
@@ -269,7 +272,6 @@ def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
 
                 t = (i + 1)/(n + 1)
                 interpolated_box = prev_box + t * (box - prev_box)
-                interpolated_box = round_box(interpolated_box)
                 new_boxes.append(interpolated_box)
                 new_frame_indices.append(target_unskipped_index)
 
