@@ -33,11 +33,11 @@ if __name__ == "__main__":
     count = 0
 
     for vid_name in names:
-        count += 1
-        if count - 1 <= start:
+        if count < start:
+            count += 1
             continue
 
-        if count - 1 >= end:
+        if count >= end:
             break
 
         print(vid_name)
