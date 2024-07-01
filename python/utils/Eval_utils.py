@@ -6,7 +6,7 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-from .VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, Tracklet
+from python.utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, Tracklet
 
 
 def correct_preds(gt, preds, iou=0.5):
@@ -162,15 +162,18 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print("-------------------------------------")
 
 
-def save_track_result(trackletSet, seq_name, tracker_name, sub_name=""):
+def save_track_result(trackletSet, seq_name, tracker_name, dataset_name, sub_name=""):
     #setup directories if they dont exist
-    if not os.path.isdir(f"TrackEval_results/{tracker_name}"):
-        os.mkdir(f"TrackEval_results/{tracker_name}")
+    if not os.path.isdir(f"TrackEval_results/{dataset_name}"):
+        os.mkdir(f"TrackEval_results/{dataset_name}")
 
-    if sub_name and not os.path.isdir(f"TrackEval_results/{tracker_name}/{sub_name}"):
-        os.mkdir(f"TrackEval_results/{tracker_name}/{sub_name}")
+    if not os.path.isdir(f"TrackEval_results/{dataset_name}/{tracker_name}"):
+        os.mkdir(f"TrackEval_results/{dataset_name}/{tracker_name}")
 
-    target_dir = f"TrackEval_results/{tracker_name}/{sub_name}" if sub_name else f"TrackEval_results/{tracker_name}"
+    if sub_name and not os.path.isdir(f"TrackEval_results/{dataset_name}/{tracker_name}/{sub_name}"):
+        os.mkdir(f"TrackEval_results/{dataset_name}/{tracker_name}/{sub_name}")
+
+    target_dir = f"TrackEval_results/{dataset_name}/{tracker_name}/{sub_name}" if sub_name else f"TrackEval_results/{tracker_name}"
 
     f = open(target_dir + f"/{seq_name}.txt", "w")
 
@@ -189,7 +192,7 @@ def save_track_result(trackletSet, seq_name, tracker_name, sub_name=""):
     print("Tracklet results saved")
 
 
-def track_eval(tracker_name = "MPNTrack", test_name = "", dataset_name = "MOT17", split = "train", metrics = None):
+def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", metrics = None):
     if metrics is None:
         metrics = ["HOTA", "CLEAR"]
 
@@ -204,6 +207,8 @@ def track_eval(tracker_name = "MPNTrack", test_name = "", dataset_name = "MOT17"
         classes = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", "UNKNOWN"]
         gt_dir = "BrackishMOT/"
 
+    tracker_dir = "TrackEval_results"
+
     main(METRICS = metrics,
          BENCHMARK = bench,
          SPLIT_TO_EVAL = split,
@@ -213,13 +218,14 @@ def track_eval(tracker_name = "MPNTrack", test_name = "", dataset_name = "MOT17"
          THRESHOLD = "0.5",
 
          GT_FOLDER = gt_dir,
-         TRACKERS_FOLDER =  "TrackEval/data/trackers/mot_challenge",
-         TRACKER_SUB_FOLDER = "data/FRCNN",
-         OUTPUT_FOLDER = "TrackEval_results",
-         OUTPUT_SUB_FOLDER = test_name,
-         
-         #USE_PARALLEL = "True",
-         #NUM_PARALLEL_CORES = "2",
+         TRACKERS_FOLDER =  tracker_dir,
+         TRACKER_SUB_FOLDER = sub_name,
+         OUTPUT_SUB_FOLDER = sub_name,
+
          PRINT_CONFIG = "False",
          TIME_PROGRESS = "False"
          )
+    
+
+if __name__ == "__main__":
+    track_eval("SORT", "init_test")
