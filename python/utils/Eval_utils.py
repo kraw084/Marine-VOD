@@ -38,6 +38,24 @@ def correct_preds(gt, preds, iou=0.5):
     return correct, match_indices
 
 
+def correct_ids(gt_tracklets, pred_tracklets, match_iou=0.5):
+    """Finds the ids and frame indices of all gt and pred boxes that get a successful match"""
+    gt_correct_ids, pred_correct_ids = [], []
+    gt_boxes_by_frame, gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
+    preds_by_frame, pred_ids_by_frame = trackletSet_frame_by_frame(pred_tracklets)
+
+    for i in range(len(gt_boxes_by_frame)):
+        _, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i], iou=match_iou)
+
+        if not matches is None:
+            for gt_index, pred_index in matches:
+                gt_correct_ids.append((i, gt_ids_by_frame[i][gt_index]))
+                pred_correct_ids.append((i, pred_ids_by_frame[i][pred_index]))
+
+    return gt_correct_ids, pred_correct_ids
+
+
+
 def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_correct_ids = False, return_components = False):
     """Calculates multiple metrics using a set of ground truth tracklets
         Arguments:
@@ -228,4 +246,4 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
     
 
 if __name__ == "__main__":
-    track_eval("SORT", "init_test")
+    track_eval("BoT-SORT", "Exp1")

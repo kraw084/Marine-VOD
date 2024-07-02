@@ -51,6 +51,7 @@ class YoloV5ObjectDetector:
 class PublicDetectionsDetector:
     def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45, half=0):
         self.conf = conf
+        self.iou = None
 
         self.num_to_class = classes
         self.num_to_colour = colours
