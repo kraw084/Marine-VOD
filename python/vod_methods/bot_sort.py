@@ -2,12 +2,9 @@ import numpy as np
 from filterpy.kalman import KalmanFilter
 import time
 from tqdm import tqdm
-from scipy.optimize import linear_sum_assignment
 
-from python.utils.VOD_utils import Tracklet, iou_matrix, TrackletSet, save_VOD, silence
-from python.utils.Eval_utils import correct_preds
+from python.utils.VOD_utils import Tracklet, TrackletSet, save_VOD, silence
 from python.utils.Cmc import CameraMotionCompensation
-
 
 """Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 
 arXiv preprint arXiv:2206.14651."""
@@ -130,7 +127,7 @@ class BoTSortTracklet(Tracklet):
     def dec_timer(self):
         if self.timer != 0: self.timer -= 1
     
-
+"""
 @silence
 def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
     start_time = time.time()
@@ -150,40 +147,15 @@ def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_h
         for t, state_est in zip(active_tracklets, tracklet_predictions):
             t.kalman_state_tracklet.add_box(state_est, i, frame.shape)
 
-        tracklet_indices, detection_indices = [], []
-        unassigned_track_indices, unassigned_det_indices = [], []
-        if len(tracklet_predictions) == 0: unassigned_det_indices = [j for j in range(len(frame_pred))]
-        if len(frame_pred) == 0: unassigned_track_indices = [j for j in range(len(active_tracklets))]
-
-        if len(tracklet_predictions) != 0 and len(frame_pred) != 0:
-            #determine tracklet kf pred and model pred matching using optimal linear sum assignment
-            iou_mat = iou_matrix(tracklet_predictions, frame_pred)
-            if not greedy_assoc:
-                tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
-            else:
-                _, match_indices = correct_preds(tracklet_predictions, frame_pred, iou=iou_min)
-                tracklet_indices = list(match_indices[:, 0])
-                detection_indices = list(match_indices[:, 1])
-
-            unassigned_track_indices = [j for j in range(len(active_tracklets)) if j not in tracklet_indices]
-            unassigned_det_indices = [j for j in range(len(frame_pred)) if j not in detection_indices]
-
-            for track_i, detect_i in zip(tracklet_indices, detection_indices):
-                iou = iou_mat[track_i][detect_i]
-                assigned_tracklet = active_tracklets[track_i]
-                assigned_det = frame_pred[detect_i]
-
-                if iou >= iou_min:
-                    #successful match, update kf preds with det measurements
-                    updated_kf_box = assigned_tracklet.kalman_update(assigned_det)
-                    assigned_tracklet.add_box(updated_kf_box, i, frame.shape)
-                    assigned_tracklet.miss_streak = 0
-                    assigned_tracklet.hits += 1
-                else:
-                    #match is not successful, unassign tracklet and detection
-                    unassigned_det_indices.append(detect_i)
-                    unassigned_track_indices.append(track_i)
-        
+        tracklet_indices, detection_indices, unassigned_track_indices, \
+        unassigned_det_indices = det_tracklet_matches(tracklet_predictions, frame_pred, iou_min, greedy_assoc)
+       
+        #successful match, update kf preds with det measurements
+        for track_i, detect_i in zip(tracklet_indices, detection_indices):
+            assigned_tracklet = active_tracklets[track_i]
+            assigned_det = frame_pred[detect_i]
+            handle_successful_match(assigned_tracklet, assigned_det, i, frame.shape)
+                
         #tracklet had no match, update with just kf pred
         for track_i in unassigned_track_indices:
             track = active_tracklets[track_i]
@@ -196,19 +168,7 @@ def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_h
             id_counter += 1
             active_tracklets.append(new_tracklet)
 
-        #clean up dead tracklets
-        for track_i in range(len(active_tracklets) - 1, -1, -1):
-            track = active_tracklets[track_i]
-
-            if track_i in unassigned_track_indices and track.timer > 0: #tracklet has had a miss before timer is up
-                active_tracklets.pop(track_i)
-
-            if track.miss_streak >= t_lost:
-                deceased_tracklets.append(track)
-                active_tracklets.pop(track_i)
-
-        for tracklet in active_tracklets: #adjust the timer of each tracklet that survived
-            tracklet.dec_timer()
+        cleanup_dead_tracklets(active_tracklets, deceased_tracklets, unassigned_track_indices, t_lost)
 
     #remove tracklets that did not meet the requirement minimum number of hits
     combined_tracklets = deceased_tracklets + active_tracklets
@@ -223,4 +183,4 @@ def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_h
     print(f"{id_counter + 1} tracklets created")
     print(f"{len(combined_tracklets)} tracklets kept")
     if not no_save: save_VOD(ts, "BoT-SORT")
-    return ts
+    return ts"""
