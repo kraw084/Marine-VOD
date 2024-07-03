@@ -55,7 +55,6 @@ def correct_ids(gt_tracklets, pred_tracklets, match_iou=0.5):
     return gt_correct_ids, pred_correct_ids
 
 
-
 def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_correct_ids = False, return_components = False):
     """Calculates multiple metrics using a set of ground truth tracklets
         Arguments:

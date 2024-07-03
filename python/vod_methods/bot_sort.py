@@ -1,7 +1,7 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter
 
-from python.vod_methods.sort import SORT_Tracker, SortTracklet
+from python.vod_methods.sort import SORT_Tracker, SortTracklet, KalmanTracker
 from python.utils.Cmc import CameraMotionCompensation
 from python.utils.VOD_utils import silence
 
@@ -9,7 +9,7 @@ from python.utils.VOD_utils import silence
 arXiv preprint arXiv:2206.14651."""
 
 
-class BoTKalmanTracker():
+class BoTKalmanTracker(KalmanTracker):
     def __init__(self, initial_box):
         self.kf = KalmanFilter(8, 4) 
         #state is [x, y, w, h, x_v, y_v, w_v, h_v]
@@ -54,13 +54,12 @@ class BoTKalmanTracker():
         
         self.kf.R = np.diag(np.square(r_diag_values))
 
-        
         self.kf.x[:4] = initial_box[:4].reshape((4, 1))
 
-    
     def predict(self, mat=None):
-        #if scale velocity would make scale negative, set scale velocity to 0
+        #if width or height would become negative, set velocity to 0
         if self.kf.x[2] + self.kf.x[6] <= 0: self.kf.x[6] = 0
+        if self.kf.x[3] + self.kf.x[7] <= 0: self.kf.x[7] = 0
 
         self.kf.predict()
 
@@ -68,16 +67,8 @@ class BoTKalmanTracker():
             self.apply_transform(mat)
 
         predicted_state = self.kf.x
-        return predicted_state[:4].reshape((4,))
+        return self.state_to_box(predicted_state[:4])
     
-
-    def update(self, box):
-        self.kf.update(box[:4].reshape((4, 1)))
-        updated_state = self.kf.x
-
-        return updated_state[:4].reshape((4,))
-    
-
     def apply_transform(self, mat):
         #extract components of the transformation matrix
         M = mat[:2, :2]
@@ -97,6 +88,13 @@ class BoTKalmanTracker():
 
         #update covariance mat
         self.kf.P = M_diag @ self.kf.P @ M_diag.T
+  
+    def box_to_state(self, box):
+        return box.reshape((4, 1))
+    
+    def state_to_box(self, state):
+        return state.reshape((4,))
+ 
     
 class BoTSortTracklet(SortTracklet):
     def __init__(self, track_id, initial_box, initial_frame_index, timer):

@@ -14,29 +14,6 @@ from python.utils.Eval_utils import correct_preds
    (ICIP) (pp. 3464-3468). IEEE."""
    
 
-def box_to_state(box):
-    """Takes a box [x, y, w, h] and converts to to the kalman state [x, y, s, r]"""
-    state = np.zeros((4, 1), np.float32)
-    state[0] = box[0]
-    state[1] = box[1]
-    state[2] = box[2] * box[3]
-    state[3] = box[2] / box[3]
-
-    return state
-
-
-def state_to_box(state):
-    """Takes a kalman state [x, y, s, r] and converts to to the kalman state [x, y, w, h]"""
-    state = np.reshape(state, (4,))
-    box = np.zeros((4,))
-    box[0] = state[0]
-    box[1] = state[1]
-    box[2] = math.sqrt(state[2] * state[3])
-    box[3] = state[2] / box[2]
-
-    return np.rint(box)
-
-
 class KalmanTracker():
     def __init__(self, initial_box):
         self.kf = KalmanFilter(7, 4) 
@@ -63,9 +40,8 @@ class KalmanTracker():
         self.kf.Q[-1,-1] *= 0.01
         self.kf.Q[4:,4:] *= 0.01
         
-        self.kf.x[:4] = box_to_state(initial_box[:4])
+        self.kf.x[:4] = self.box_to_state(initial_box[:4])
 
-    
     def predict(self):
         #if scale velocity would make scale negative, set scale velocity to 0
         if self.kf.x[2] + self.kf.x[6] <= 0: self.kf.x[6] = 0
@@ -73,13 +49,34 @@ class KalmanTracker():
         self.kf.predict()
         predicted_state = self.kf.x
 
-        return state_to_box(predicted_state[:4])
+        return self.state_to_box(predicted_state[:4])
     
     def update(self, box):
-        self.kf.update(box_to_state(box[:4]))
+        self.kf.update(self.box_to_state(box[:4]))
         updated_state = self.kf.x
 
-        return state_to_box(updated_state[:4])
+        return self.state_to_box(updated_state[:4])
+    
+    def box_to_state(self, box):
+        """Takes a box [x, y, w, h] and converts to to the kalman state [x, y, s, r]"""
+        state = np.zeros((4, 1), np.float32)
+        state[0] = box[0]
+        state[1] = box[1]
+        state[2] = box[2] * box[3]
+        state[3] = box[2] / box[3]
+
+        return state
+
+    def state_to_box(self, state):
+        """Takes a kalman state [x, y, s, r] and converts to to the kalman state [x, y, w, h]"""
+        state = np.reshape(state, (4,))
+        box = np.zeros((4,))
+        box[0] = state[0]
+        box[1] = state[1]
+        box[2] = math.sqrt(state[2] * state[3])
+        box[3] = state[2] / box[2]
+
+        return np.rint(box)
     
 
 class SortTracklet(Tracklet):

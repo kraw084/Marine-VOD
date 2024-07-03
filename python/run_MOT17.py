@@ -82,7 +82,7 @@ if __name__ == "__main__":
             print_metrics(*metrics_from_components(metrics))
             components += metrics
         else:
-            #save_track_result(target_tracklets, vid_name, "BOT-SORT", "MOT17-train", "Exp1")
+            #save_track_result(target_tracklets, vid_name, "BOT-SORT", "MOT17-train", "no-cmc")
             target_tracklets.draw_tracklets()
             target_tracklets.video.play(1080, start_paused = True)
 
