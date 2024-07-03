@@ -1,17 +1,14 @@
 import os
-#os.environ["TQDM_DISABLE"] = "1"
 
-from Config import Config
-from Detectors import create_urchin_model
-from Video_utils import Video, stitch_video
-from VOD_utils import (frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets, 
-                       TrackletSet, frame_skipping, single_vid_metrics, print_metrics, 
-                       save_VOD, metrics_from_components)
+from utils.Config import Config
+from utils.Detectors import create_urchin_model
+from utils.Video_utils import Video, stitch_video
+from utils.VOD_utils import TrackletSet, frame_skipping
 
-from SeqNMS import Seq_nms
-from sort import SORT, play_sort_with_kf
-from bot_sort import BoT_SORT
-from cmc import show_flow
+from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets
+from vod_methods.SeqNMS import Seq_nms
+from vod_methods.sort import SORT, play_sort_with_kf
+from vod_methods.bot_sort import BoT_SORT
 
 if __name__ == "__main__":
 
@@ -29,8 +26,6 @@ if __name__ == "__main__":
         vid = Video(urchin_video_folder + vid_name)
         print("Finished loading video")
 
-
-        #show_flow(vid)
 
         sort_tracklets = SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
 

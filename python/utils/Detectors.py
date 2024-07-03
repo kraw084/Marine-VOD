@@ -2,8 +2,6 @@ import torch
 import numpy as np
 import os
 
-from VOD_utils import round_box
-
 
 class YoloV5ObjectDetector:
     """Wrapper class for still image yolov5 model"""
@@ -46,20 +44,14 @@ class YoloV5ObjectDetector:
         """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
         the x, y, w, h, conf and label codes of each prediction"""
         pred = self(im).xywh[0].cpu().numpy()
-        #for row in pred:
-        #    row[0] = round(row[0])
-        #    row[1] = round(row[1])
-        #    row[2] = round(row[2])
-        #    row[3] = round(row[3])
 
-        #    row[4] = round(row[4], 2)
-
-        return [round_box(box) for box in pred]
+        return pred
 
 
 class PublicDetectionsDetector:
     def __init__(self, vid_name, classes, colours, detector="FRCNN", conf=0.45, half=0):
         self.conf = conf
+        self.iou = None
 
         self.num_to_class = classes
         self.num_to_colour = colours
@@ -102,7 +94,7 @@ class PublicDetectionsDetector:
 
             center_x = top_left_x + width/2
             center_y = top_left_y + height/2
-            box = round_box(np.array([center_x, center_y, width, height, conf, 0]))
+            box = np.array([center_x, center_y, width, height, conf, 0])
 
             frame_dets.append(box)
 
