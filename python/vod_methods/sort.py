@@ -4,12 +4,9 @@ import numpy as np
 import math
 from filterpy.kalman import KalmanFilter
 from scipy.optimize import linear_sum_assignment
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from python.utils.VOD_utils import TrackletSet, save_VOD, silence
-from python.utils.VOD_utils import Tracklet, iou_matrix, draw_single_tracklet
+from python.utils.VOD_utils import Tracklet, iou_matrix
 from python.utils.Eval_utils import correct_preds
 
 """Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016, September). 
@@ -125,6 +122,7 @@ class SORT_Tracker:
         self.no_save = no_save
         self.frame_size = video.frames[0].shape
         self.tracklet_type = SortTracklet
+        self.name = "SORT"
         
         self.start_time = time.time()
         self.active_tracklets = []
@@ -245,7 +243,7 @@ class SORT_Tracker:
 
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
-        print("Starting SORT")
+        print(f"Starting {self.name}")
         for i in tqdm(range(self.video.num_of_frames), bar_format="{l_bar}{bar:30}{r_bar}"):
             tracklet_predictions, detections = self.get_preds(i)
             
@@ -265,10 +263,10 @@ class SORT_Tracker:
         ts = TrackletSet(self.video, combined_tracklets, self.model.num_to_class)
 
         duration = round((time.time() - self.start_time)/60, 2)
-        print(f"Finished SORT in {duration}mins")
+        print(f"Finished {self.name} in {duration}mins")
         print(f"{self.id_counter + 1} tracklets created")
         print(f"{len(combined_tracklets)} tracklets kept")
-        if not self.no_save: save_VOD(ts, "SORT")
+        if not self.no_save: save_VOD(ts, self.name)
         return ts
         
     def __call__(self):

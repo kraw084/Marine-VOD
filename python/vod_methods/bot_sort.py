@@ -1,10 +1,9 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter
-import time
-from tqdm import tqdm
 
-from python.utils.VOD_utils import Tracklet, TrackletSet, save_VOD, silence
+from python.vod_methods.sort import SORT_Tracker, SortTracklet
 from python.utils.Cmc import CameraMotionCompensation
+from python.utils.VOD_utils import silence
 
 """Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 
 arXiv preprint arXiv:2206.14651."""
@@ -99,19 +98,11 @@ class BoTKalmanTracker():
         #update covariance mat
         self.kf.P = M_diag @ self.kf.P @ M_diag.T
     
-
-class BoTSortTracklet(Tracklet):
+class BoTSortTracklet(SortTracklet):
     def __init__(self, track_id, initial_box, initial_frame_index, timer):
-        super().__init__(track_id)
+        super().__init__(track_id, initial_box, initial_frame_index, timer)
         self.kf_tracker = BoTKalmanTracker(initial_box)
-        self.miss_streak = 0
-        self.hits = 1
-        self.timer = timer
         
-        self.add_box(initial_box, initial_frame_index)
-
-        self.kalman_state_tracklet = Tracklet(-track_id)
-
     def kalman_predict(self, mat = None):
         predicted_box = self.kf_tracker.predict(mat)
         conf = self.boxes[-1][4]
@@ -127,60 +118,25 @@ class BoTSortTracklet(Tracklet):
     def dec_timer(self):
         if self.timer != 0: self.timer -= 1
     
-"""
+    
+class BoTSORT_Tracker(SORT_Tracker):
+    def __init__(self, model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
+        super().__init__(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
+        self.tracklet_type = BoTSortTracklet
+        
+        self.cam_comp = CameraMotionCompensation()
+    
+    def get_preds(self, frame_index):
+        """Get the model and tracklet predictions (with camera motion compensation) for the current frame"""
+        cam_comp_mat = self.cam_comp.find_transform(self.video.frames[frame_index])
+        frame_pred =self.model.xywhcl(self.video.frames[frame_index])
+        tracklet_predictions = [t.kalman_predict(cam_comp_mat) for t in self.active_tracklets]
+      
+        return tracklet_predictions, frame_pred
+    
+    
 @silence
 def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
-    start_time = time.time()
-    active_tracklets = []
-    deceased_tracklets = []
-    id_counter = 0
-
-    cam_comp = CameraMotionCompensation()
-
-    print("Starting BoT-SORT")
-    for i, frame in tqdm(list(enumerate(video)), bar_format="{l_bar}{bar:30}{r_bar}"):
-        frame_pred = model.xywhcl(frame)
-
-        cam_comp_mat = cam_comp.find_transform(frame)
-        tracklet_predictions = [t.kalman_predict(cam_comp_mat) for t in active_tracklets]
-
-        for t, state_est in zip(active_tracklets, tracklet_predictions):
-            t.kalman_state_tracklet.add_box(state_est, i, frame.shape)
-
-        tracklet_indices, detection_indices, unassigned_track_indices, \
-        unassigned_det_indices = det_tracklet_matches(tracklet_predictions, frame_pred, iou_min, greedy_assoc)
-       
-        #successful match, update kf preds with det measurements
-        for track_i, detect_i in zip(tracklet_indices, detection_indices):
-            assigned_tracklet = active_tracklets[track_i]
-            assigned_det = frame_pred[detect_i]
-            handle_successful_match(assigned_tracklet, assigned_det, i, frame.shape)
-                
-        #tracklet had no match, update with just kf pred
-        for track_i in unassigned_track_indices:
-            track = active_tracklets[track_i]
-            track.add_box(tracklet_predictions[track_i], i, frame.shape)
-            track.miss_streak += 1
-
-        #detection had no match, create new tracklet
-        for det_i in unassigned_det_indices:
-            new_tracklet = BoTSortTracklet(id_counter, frame_pred[det_i], i, probation_timer)
-            id_counter += 1
-            active_tracklets.append(new_tracklet)
-
-        cleanup_dead_tracklets(active_tracklets, deceased_tracklets, unassigned_track_indices, t_lost)
-
-    #remove tracklets that did not meet the requirement minimum number of hits
-    combined_tracklets = deceased_tracklets + active_tracklets
-    for track_i in range(len(combined_tracklets) - 1, -1, -1):
-        if combined_tracklets[track_i].hits < min_hits:
-            combined_tracklets.pop(track_i)
-
-    ts = TrackletSet(video, combined_tracklets, model.num_to_class)
-
-    duration = round((time.time() - start_time)/60, 2)
-    print(f"Finished BoT-SORT in {duration}mins")
-    print(f"{id_counter + 1} tracklets created")
-    print(f"{len(combined_tracklets)} tracklets kept")
-    if not no_save: save_VOD(ts, "BoT-SORT")
-    return ts"""
+    """Create and run the SORT tracker with a single function"""
+    tracker = BoTSORT_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
+    return tracker()

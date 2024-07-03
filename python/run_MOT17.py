@@ -9,7 +9,7 @@ from datasets.MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets
 from vod_methods.SeqNMS import Seq_nms
 from vod_methods.sort import SORT
-#from vod_methods.bot_sort import BoT_SORT
+from vod_methods.bot_sort import BoT_SORT
 
 
 if __name__ == "__main__":
@@ -21,8 +21,8 @@ if __name__ == "__main__":
     enable_gt = False
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = True
-    enable_BoTSORT = False
+    enable_SORT = False
+    enable_BoTSORT = True
 
     compare_to_gt = False
     overall_metrics = False
@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
         if enable_BoTSORT:
             vid5 = load_MOT17_video(vid_name, half)
-            #bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
-            #target_tracklets = bot_sort_tracklets
+            bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            target_tracklets = bot_sort_tracklets
 
 
         if enable_gt and compare_to_gt:
