@@ -9,7 +9,7 @@ from TrackEval.scripts.run_mot_challenge import main
 from python.utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, Tracklet
 
 
-def correct_preds(gt, preds, iou=0.5):
+def correct_preds(gt, preds, iou_th=0.5):
     """Determines which predictions are correct and returns the matching
         Arguments:
             gt: list of ground truth np.array boxes in the form xywhcl
@@ -26,7 +26,7 @@ def correct_preds(gt, preds, iou=0.5):
     iou_mat = iou_matrix(gt, preds)
     correct_label = gt[:, 5:6] == preds[:, 5].T
 
-    match_indices = np.argwhere((iou_mat >= iou) & correct_label)
+    match_indices = np.argwhere((iou_mat >= iou_th) & correct_label)
     if match_indices.shape[0]:
         iou_of_matches = iou_mat[match_indices[:, 0], match_indices[:, 1]]
         match_indices = match_indices[iou_of_matches.argsort()[::-1]]
@@ -246,4 +246,4 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
     
 
 if __name__ == "__main__":
-    track_eval("BoT-SORT", "Exp1")
+    track_eval("FBF", "Exp1")

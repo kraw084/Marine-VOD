@@ -15,7 +15,6 @@ sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
 
 
-
 NUM_OF_COLOURS = 8
 colours = [colorsys.hsv_to_rgb(hue, 0.8, 1) for hue in np.linspace(0, 1, NUM_OF_COLOURS + 1)][:-1]
 colours = [(round(255 * c[0]), round(255 * c[1]), round(255 * c[2])) for c in colours]
