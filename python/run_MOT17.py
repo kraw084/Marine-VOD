@@ -3,7 +3,8 @@ import numpy as np
 from utils.Detectors import create_MOT_model
 from utils.Video_utils import Video, stitch_video
 from utils.VOD_utils import TrackletSet, frame_skipping, save_VOD
-from utils.Eval_utils import single_vid_metrics, metrics_from_components, print_metrics, save_track_result, correct_ids
+from utils.Eval_utils import save_track_result, correct_ids, Evaluator, metric_by_frame_graph
+from utils.Cmc import show_flow
 from datasets.MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
 
 from vod_methods.fbf import frame_by_frame_VOD, frame_by_frame_VOD_with_tracklets
@@ -18,17 +19,16 @@ if __name__ == "__main__":
     names = sorted(vid_names_by_set(data_set))
     print(f"{len(names)} videos found in {data_set} set")
 
-    enable_gt = False
+    enable_gt = True
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = True
 
     compare_to_gt = False
-    overall_metrics = False
+    overall_metrics = True
 
-    components = np.zeros((11,))
-    start = 0
+    start = 6
     end = len(names)
     count = 0
 
@@ -68,7 +68,6 @@ if __name__ == "__main__":
             bot_sort_tracklets = BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = bot_sort_tracklets
 
-
         if enable_gt and compare_to_gt:
             gt_ids, pred_ids = correct_ids(gt_tracklets, target_tracklets)
             gt_tracklets.draw_tracklets(gt_ids)
@@ -78,16 +77,26 @@ if __name__ == "__main__":
             stitched_video.play(1500, start_paused = True)
 
         elif enable_gt and overall_metrics:
-            metrics = single_vid_metrics(gt_tracklets, target_tracklets, match_iou=0.3, return_components=True)
-            print_metrics(*metrics_from_components(metrics))
-            components += metrics
+            eval = Evaluator("SORT", 0.5)
+            eval.set_tracklets(gt_tracklets, target_tracklets)
+            #eval.eval_video(loading_bar=False)
+            #eval.print_metrics(True)
+            
+            mota = [results[2] for results in eval.metrics_fbf()]
+            metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
+            
         else:
-            #save_track_result(target_tracklets, vid_name, "BOT-SORT", "MOT17-train", "no-cmc")
-            target_tracklets.draw_tracklets()
-            target_tracklets.video.play(1080, start_paused = True)
+            #save_track_result(target_tracklets, vid_name, "BOT-SORT", "MOT17-train", "Exp2")
+            #target_tracklets.draw_tracklets()
+            #target_tracklets.video.play(1080, start_paused = True)
+            
+            sort_tracklets.draw_tracklets()
+            show_flow(bot_sort_tracklets.video)
+            bot_sort_tracklets.draw_tracklets()
+            stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot.mp4")
+            stitched_video.play(1500, start_paused = True)
 
 
     if enable_gt and overall_metrics:
-        final_metrics = metrics_from_components(components)
-        print("Final metrics:")
-        print_metrics(*final_metrics)
+        print("Overall metrics:")
+        eval.print_metrics()

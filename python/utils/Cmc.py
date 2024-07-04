@@ -165,7 +165,6 @@ def show_flow(vid):
         prev_points = cv2.goodFeaturesToTrack(prev_im, maxCorners=1000, qualityLevel=0.01, 
                                              minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
     
-    vid.play(1200)
 
 
 if __name__ == "__main__":

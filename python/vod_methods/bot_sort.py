@@ -43,7 +43,7 @@ class BoTKalmanTracker(KalmanTracker):
                                   pos_std * w, pos_std * h,
                                   vel_std * w, vel_std * h,
                                   vel_std * w, vel_std * h])
-        
+         
         q_diag_values[:4] *= 2
         q_diag_values[4:] *= 10
         
@@ -53,6 +53,12 @@ class BoTKalmanTracker(KalmanTracker):
                                   pos_std * w, pos_std * h])
         
         self.kf.R = np.diag(np.square(r_diag_values))
+        
+        #self.kf.R[2:,2:] *= 10.0
+        #self.kf.P[4:,4:] *= 1000.0
+        #self.kf.P *= 10.0
+        #self.kf.Q[-2:,-2:] *= 0.01
+        #self.kf.Q[4:,4:] *= 0.01
 
         self.kf.x[:4] = initial_box[:4].reshape((4, 1))
 

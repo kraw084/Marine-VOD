@@ -1,12 +1,14 @@
 import numpy as np
 import os
 import sys
+from tqdm import tqdm
+import matplotlib.pyplot as plt    
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-from python.utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, Tracklet
+from python.utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
 
 
 def correct_preds(gt, preds, iou_th=0.5):
@@ -131,7 +133,7 @@ def single_vid_metrics(gt_tracklets, pred_tracklets, match_iou = 0.5, return_cor
     gt_total = sum([len(gt_boxes) for gt_boxes in gt_boxes_by_frame])
     mota = 1 - ((fn + fp + id_switches)/(gt_total + 1E-9))
 
-    motp = dist / total_matches if not total_matches == 0 else 0
+    motp = dist / total_matches if not total_matches == 0 else 1
 
     #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
     gt_detection_lifetimes = [gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in gt_tracklets]
@@ -160,7 +162,7 @@ def metrics_from_components(components):
     p = components[0]/(components[0] + components[1]) if not (components[0] + components[1]) == 0 else 1
     r = components[0]/(components[0] + components[2]) if not (components[0] + components[2]) == 0 else 1
     mota = 1 - ((components[1] + components[2] + components[3])/components[4] + 1E-9)
-    motp = components[5]/components[6] if not components[6] == 0 else 0
+    motp = components[5]/components[6] if not components[6] == 0 else 1
     mt = components[7]/(components[7] + components[8] + components[9]) 
     pt = components[8]/(components[7] + components[8] + components[9])   
     ml = components[9]/(components[7] + components[8] + components[9])
@@ -174,8 +176,8 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print("-------------------------------------")
     print(f"P: {round(p, 3)}, R: {round(r, 3)}")
     print(f"MOTA: {round(mota, 3)}, MOTP: {round(motp, 3)}")
-    print(f"MT: {round(mt, 3)}, PT: {round(pt, 3)}, ML: {round(ml, 3)}")
-    print(f"IDSW: {round(id_switchs, 3)}, FM: {frag}")
+    print(f"MT: {mt}, PT: {pt}, ML: {ml}")
+    print(f"IDSW: {id_switchs}, FM: {frag}")
     print("-------------------------------------")
 
 
@@ -243,6 +245,132 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
          TIME_PROGRESS = "False"
          )
     
+    
+class Evaluator:
+    def __init__(self, tracker_name, match_iou = 0.5):
+        self.tracker_name = tracker_name
+        self.match_iou = match_iou
+        
+        self.tp, self.fp, self.fn = 0, 0, 0
+        self.mt, self.pt, self.ml = 0, 0, 0
+        self.id_switches, self.dist, self.total_matches, self.frag = 0, 0, 0, 0    
+        self.gt_total = 0
+        
+        
+    def set_tracklets(self, gt_tracklets, pred_tracklets):
+        self.pred_tracklets = pred_tracklets
+        self.gt_tracklets = gt_tracklets
+                
+        self.gt_detection_lifetimes = {gt_track.id:0 for gt_track in gt_tracklets}
+        self.gt_is_tracked = {gt_track.id:False for gt_track in gt_tracklets}
+        self.corresponding_id = {}
+        
+        self.gt_boxes_by_frame, self.gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
+        self.preds_by_frame, self.pred_ids_by_frame = trackletSet_frame_by_frame(pred_tracklets)
+    
+        
+    def eval_frame(self, frame_index):
+        gt_boxes = self.gt_boxes_by_frame[frame_index]
+        pred_boxes = self.preds_by_frame[frame_index]
+        
+        correct, matches = correct_preds(gt_boxes, pred_boxes, iou_th=self.match_iou)
+        num_correct = np.sum(correct)
 
+        self.tp += num_correct
+        self.fp += correct.shape[0] - num_correct
+        self.fn += len(self.gt_boxes_by_frame[frame_index]) - num_correct
+        
+        self.gt_total += len(gt_boxes)
+
+        new_gt_is_tracked = {gt_track.id:False for gt_track in self.gt_tracklets}
+        
+        if not matches is None:
+            for gt_index, pred_index in matches:
+                gt_tracklet_id = self.gt_ids_by_frame[frame_index][gt_index]
+                pred_tracklet_id = self.pred_ids_by_frame[frame_index][pred_index]
+
+                new_gt_is_tracked[gt_tracklet_id] = True
+
+                if not gt_tracklet_id in self.corresponding_id:
+                    #first time tracklet has a match
+                    self.corresponding_id[gt_tracklet_id] = pred_tracklet_id
+                else:
+                    #tracklet has been matched before
+                    if self.corresponding_id[gt_tracklet_id] != pred_tracklet_id:
+                        #id switch has occured
+                        #print(f"frame: {i} - id switch: gt {gt_index}, original match {corresponding_id[gt_tracklet_id]}, new match {pred_tracklet_id}")
+                        self.id_switches += 1
+                        self.corresponding_id[gt_tracklet_id] = pred_tracklet_id
+
+                self.dist += iou(gt_boxes[gt_index], pred_boxes[pred_index])
+                self.total_matches += 1
+
+                self.gt_detection_lifetimes[gt_tracklet_id] += 1
+
+        for gt_tracklet_id in [gt_track.id for gt_track in self.gt_tracklets]:
+            prev_tracked = self.gt_is_tracked[gt_tracklet_id]
+            currently_tracked = new_gt_is_tracked[gt_tracklet_id]
+            if prev_tracked and not currently_tracked:
+                self.frag += 1
+
+        self.gt_is_tracked = new_gt_is_tracked
+
+
+    def eval_video(self, loading_bar=False):
+        if loading_bar:
+            print("Evaluating:")
+            for i in tqdm(range(len(self.gt_boxes_by_frame)), bar_format="{l_bar}{bar:30}{r_bar}"):
+                self.eval_frame(i)
+        else:
+            for i in range(len(self.gt_boxes_by_frame)):
+                self.eval_frame(i)
+            
+        #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
+        gt_lifetimes_props = [self.gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in self.gt_tracklets]
+        for duration in gt_lifetimes_props:
+            if duration >= 0.8:
+                self.mt += 1
+            elif duration <= 0.2:
+                self.ml += 1
+            else:
+                self.pt += 1
+     
+                    
+    def compute_metrics(self):
+        #calculate metrics from equations
+        p = self.tp / (self.tp + self.fp) if not (self.tp + self.fp) == 0 else 1
+        r = self.tp / (self.tp + self.fn) if not (self.tp + self.fn) == 0 else 1
+
+        mota = 1 - ((self.fn + self.fp + self.id_switches)/(self.gt_total + 1E-9))
+
+        motp = self.dist / self.total_matches if not self.total_matches == 0 else 1
+
+        return p, r, mota, motp, self.mt, self.pt, self.ml, self.id_switches, self.frag
+    
+    
+    def print_metrics(self, print_vid_name = False):
+        p, r, mota, motp, mt, pt, ml, id_switchs, frag = self.compute_metrics()
+        print(f"Tracker: {self.tracker_name}{f' - video: {self.pred_tracklets.video.name}' if print_vid_name else ''}")
+        print(f"P: {round(p, 3)}, R: {round(r, 3)}")
+        print(f"MOTA: {round(mota, 3)}, MOTP: {round(motp, 3)}")
+        print(f"MT: {mt}, PT: {pt}, ML: {ml}")
+        print(f"IDSW: {id_switchs}, FM: {frag}")
+        print("")
+        
+        
+    def metrics_fbf(self):
+        for i in range(len(self.gt_boxes_by_frame)):
+            self.eval_frame(i)
+            yield self.compute_metrics()
+   
+   
+def metric_by_frame_graph(video, metric_name, metric_values):
+    plt.plot(range(video.num_of_frames), metric_values, color="red")
+    plt.title(f"{metric_name} by frame - {video.name}")
+    plt.xlabel("Frame")
+    plt.ylabel(metric_name)
+    
+    plt.show()
+          
 if __name__ == "__main__":
-    track_eval("FBF", "Exp1")
+    track_eval("BOT-SORT", "Exp2")

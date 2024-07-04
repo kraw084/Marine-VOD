@@ -132,6 +132,9 @@ class Tracklet:
         val = (self.frame_indexes[self.i], self.boxes[self.i])
         self.i += 1
         return val
+    
+    def __len__(self):
+        return len(self.frame_indexes)
 
 
 class TrackletSet:
@@ -182,6 +185,9 @@ class TrackletSet:
         val = self.tracklets[self.i]
         self.i += 1
         return val
+    
+    def __len__(self):
+        return len(self.tracklets)
 
 
 def draw_single_tracklet(video, tracklet, label, colour):
