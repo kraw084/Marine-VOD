@@ -8,7 +8,7 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-from python.utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+from python.mv_utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
 
 
 def correct_preds(gt, preds, iou_th=0.5):

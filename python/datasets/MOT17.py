@@ -3,9 +3,9 @@ import os
 import cv2
 import numpy as np
 
-from python.utils.Video_utils import Video, frames_to_video
-from python.utils.VOD_utils import Tracklet, TrackletSet, annotate_image, round_box
-from python.utils.Detectors import PublicDetectionsDetector
+from python.mv_utils.Video_utils import Video, frames_to_video
+from python.mv_utils.VOD_utils import Tracklet, TrackletSet, annotate_image, round_box
+from python.mv_utils.Detectors import PublicDetectionsDetector
 
 
 def create_MOT17_videos():

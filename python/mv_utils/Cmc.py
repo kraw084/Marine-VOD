@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import colorsys
 
-from .Video_utils import resize_image, Video
+from python.mv_utils.Video_utils import resize_image, Video
 
 
 class CameraMotionCompensation:

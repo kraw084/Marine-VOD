@@ -2,7 +2,8 @@ import torch
 import numpy as np
 import os
 
-from .Config import Config
+
+from mv_utils.Config import Config
 
 
 class YoloV5ObjectDetector:

@@ -7,8 +7,8 @@ import colorsys
 import math
 import contextlib
 
-from .Video_utils import Video
-from .Config import Config
+from mv_utils.Video_utils import Video
+from mv_utils.Config import Config
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)
@@ -42,6 +42,8 @@ def annotate_image(im, prediction, num_to_label, num_to_colour, ids=None):
 
 def draw_box(im, box, label, colour, id = None):
     """Draws a single box onto an image"""
+    if Config.low_conf_colour and box[4] < Config.low_conf_th: colour = Config.low_conf_colour
+    
     box = round_box(box)
     box_thickness = 3
     text_thickness = math.floor(3 * Config.label_font_thickness)

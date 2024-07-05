@@ -8,8 +8,8 @@ import random
 import math
 import sys
 
-from python.utils.Video_utils import Video, frames_to_video
-from python.utils.VOD_utils import Tracklet, TrackletSet
+from python.mv_utils.Video_utils import Video, frames_to_video
+from python.mv_utils.VOD_utils import Tracklet, TrackletSet
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_dir)

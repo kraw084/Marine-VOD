@@ -1,7 +1,7 @@
 from tqdm import tqdm
 
 from python.vod_methods.sort import SORT_Tracker
-from python.utils.VOD_utils import silence
+from python.mv_utils.VOD_utils import silence
 
 
 class ByteTrack_Tracker(SORT_Tracker):
