@@ -50,9 +50,9 @@ class ByteTrack_Tracker(SORT_Tracker):
             
             tracklet_indices = hc_tracklet_indices + list(map(lc_track_map, lc_tracklet_indices))
             detection_indices = list(map(hc_det_map, hc_detection_indices)) + list(map(lc_det_map, lc_detection_indices))
-            unassigned_track_indices = hc_unassigned_track_indices + list(map(lc_track_map, lc_unassigned_track_indices))
+            unassigned_track_indices = list(map(lc_track_map, lc_unassigned_track_indices))
             unassigned_det_indices = list(map(hc_det_map, hc_unassigned_det_indices)) + list(map(lc_det_map, lc_unassigned_det_indices))
-            
+                
             self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
