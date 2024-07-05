@@ -56,6 +56,8 @@ class ByteTrack_Tracker(SORT_Tracker):
             self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
+            
+            self.cleanup_off_screen()
            
         combined_tracklets = self.deceased_tracklets + self.active_tracklets
         self.cleanup_min_hits(combined_tracklets) 

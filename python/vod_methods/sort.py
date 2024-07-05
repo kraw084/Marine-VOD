@@ -5,7 +5,7 @@ import math
 from filterpy.kalman import KalmanFilter
 from scipy.optimize import linear_sum_assignment
 
-from python.utils.VOD_utils import TrackletSet, save_VOD, silence
+from python.utils.VOD_utils import TrackletSet, save_VOD, silence, tracklet_off_screen
 from python.utils.VOD_utils import Tracklet, iou_matrix
 from python.utils.Eval_utils import correct_preds
 
@@ -215,6 +215,14 @@ class SORT_Tracker:
             if tracklets[track_i].hits < self.min_hits:
                 tracklets.pop(track_i)
 
+    def cleanup_off_screen(self):
+        for track_i in range(len(self.active_tracklets) - 1, -1, -1):
+            track = self.active_tracklets[track_i]
+
+            if tracklet_off_screen(self.video.frames[0], track):
+                self.deceased_tracklets.append(track)
+                self.active_tracklets.pop(track_i) 
+
     def process_matches(self, track_is, det_is, un_track_is, un_det_is, track_preds, detections, frame_i):
         """Processes the tracklets and detections based on whether they were matched or not
            Args:
@@ -266,6 +274,8 @@ class SORT_Tracker:
             self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
+            
+            self.cleanup_off_screen()
            
         combined_tracklets = self.deceased_tracklets + self.active_tracklets
         self.cleanup_min_hits(combined_tracklets) 

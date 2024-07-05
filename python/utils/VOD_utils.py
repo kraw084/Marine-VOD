@@ -231,6 +231,18 @@ def round_box(box):
     rounded_box[4] = box[4]
     return rounded_box
 
+
+def tracklet_off_screen(frame, tracklet):
+    if len(tracklet.boxes) == 0: return False
+    
+    last_box = tracklet.boxes[-1]
+    h, w, _ = frame.shape
+    
+    top_left_x, top_left_y, bottom_right_x, bottom_right_y = xywhTOxyxy(*last_box[:4])
+    
+    return top_left_x > w or bottom_right_x < 0 or top_left_y > h or bottom_right_y < 0
+    
+
 @silence
 def frame_skipping(full_video, vod_method, model, n=1, **vod_kwargs):
     """Used to speed up VOD methods by skipping frames. Boxes are interpolated to fit the orignal video.
