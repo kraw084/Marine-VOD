@@ -47,7 +47,7 @@ def correct_ids(gt_tracklets, pred_tracklets, match_iou=0.5):
     preds_by_frame, pred_ids_by_frame = trackletSet_frame_by_frame(pred_tracklets)
 
     for i in range(len(gt_boxes_by_frame)):
-        _, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i], iou=match_iou)
+        _, matches = correct_preds(gt_boxes_by_frame[i], preds_by_frame[i], iou_th=match_iou)
 
         if not matches is None:
             for gt_index, pred_index in matches:
@@ -258,6 +258,7 @@ class Evaluator:
         
         
     def set_tracklets(self, gt_tracklets, pred_tracklets):
+        """Sets the gt and pred tracklets to be evaluated"""
         self.pred_tracklets = pred_tracklets
         self.gt_tracklets = gt_tracklets
                 
@@ -270,6 +271,7 @@ class Evaluator:
     
         
     def eval_frame(self, frame_index):
+        """Calculates metric components for a single frame"""
         gt_boxes = self.gt_boxes_by_frame[frame_index]
         pred_boxes = self.preds_by_frame[frame_index]
         
@@ -317,6 +319,7 @@ class Evaluator:
 
 
     def eval_video(self, loading_bar=False):
+        """Evaluates an entire video"""
         if loading_bar:
             print("Evaluating:")
             for i in tqdm(range(len(self.gt_boxes_by_frame)), bar_format="{l_bar}{bar:30}{r_bar}"):
@@ -337,7 +340,7 @@ class Evaluator:
      
                     
     def compute_metrics(self):
-        #calculate metrics from equations
+        """Computes metrics from the components"""
         p = self.tp / (self.tp + self.fp) if not (self.tp + self.fp) == 0 else 1
         r = self.tp / (self.tp + self.fn) if not (self.tp + self.fn) == 0 else 1
 
@@ -349,6 +352,7 @@ class Evaluator:
     
     
     def print_metrics(self, print_vid_name = False):
+        """Calculates and prints metrics"""
         p, r, mota, motp, mt, pt, ml, id_switchs, frag = self.compute_metrics()
         print(f"Tracker: {self.tracker_name}{f' - video: {self.pred_tracklets.video.name}' if print_vid_name else ''}")
         print(f"P: {round(p, 3)}, R: {round(r, 3)}")
@@ -359,12 +363,14 @@ class Evaluator:
         
         
     def metrics_fbf(self):
+        """Generator to get metrics at every frame (does not work for mt, pt and ml)"""
         for i in range(len(self.gt_boxes_by_frame)):
             self.eval_frame(i)
             yield self.compute_metrics()
    
    
 def metric_by_frame_graph(video, metric_name, metric_values):
+    """Create a graph to display how a given metric changes throughout the video"""
     plt.plot(range(video.num_of_frames), metric_values, color="red")
     plt.title(f"{metric_name} by frame - {video.name}")
     plt.xlabel("Frame")
@@ -372,5 +378,8 @@ def metric_by_frame_graph(video, metric_name, metric_values):
     
     plt.show()
           
+          
 if __name__ == "__main__":
-    track_eval("BOT-SORT", "Exp2")
+    track_eval("BOT-SORT", "SDP")
+
+    

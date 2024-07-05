@@ -91,8 +91,8 @@ class Tracklet:
         self.end_frame = -1
 
     def add_box(self, box, frame_index, im_shape=None):
-        if not im_shape is None:
-            box = self.clip_box(box, im_shape[1], im_shape[0])
+        #if not im_shape is None:
+        #    box = self.clip_box(box, im_shape[1], im_shape[0])
 
         self.boxes.append(box)
         self.frame_indexes.append(frame_index)

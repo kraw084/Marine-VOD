@@ -209,6 +209,12 @@ class SORT_Tracker:
         for tracklet in self.active_tracklets: 
             tracklet.dec_timer()
 
+    def cleanup_min_hits(self, tracklets):
+        #remove tracklets that did not meet the requirement minimum number of hits
+        for track_i in range(len(tracklets) - 1, -1, -1):
+            if tracklets[track_i].hits < self.min_hits:
+                tracklets.pop(track_i)
+
     def process_matches(self, track_is, det_is, un_track_is, un_det_is, track_preds, detections, frame_i):
         """Processes the tracklets and detections based on whether they were matched or not
            Args:
@@ -238,6 +244,16 @@ class SORT_Tracker:
             self.id_counter += 1
             self.active_tracklets.append(new_tracklet)
 
+    def save_and_return(self, tracklets):
+        ts = TrackletSet(self.video, tracklets, self.model.num_to_class)
+
+        duration = round((time.time() - self.start_time)/60, 2)
+        print(f"Finished {self.name} in {duration}mins")
+        print(f"{self.id_counter + 1} tracklets created")
+        print(f"{len(tracklets)} tracklets kept")
+        if not self.no_save: save_VOD(ts, self.name)
+        return ts
+
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
         print(f"Starting {self.name}")
@@ -250,22 +266,11 @@ class SORT_Tracker:
             self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
-            
-        #remove tracklets that did not meet the requirement minimum number of hits
+           
         combined_tracklets = self.deceased_tracklets + self.active_tracklets
-        for track_i in range(len(combined_tracklets) - 1, -1, -1):
-            if combined_tracklets[track_i].hits < self.min_hits:
-                combined_tracklets.pop(track_i)
-
-        ts = TrackletSet(self.video, combined_tracklets, self.model.num_to_class)
-
-        duration = round((time.time() - self.start_time)/60, 2)
-        print(f"Finished {self.name} in {duration}mins")
-        print(f"{self.id_counter + 1} tracklets created")
-        print(f"{len(combined_tracklets)} tracklets kept")
-        if not self.no_save: save_VOD(ts, self.name)
-        return ts
-        
+        self.cleanup_min_hits(combined_tracklets) 
+        return self.save_and_return(combined_tracklets)
+ 
     def __call__(self):
         return self.track()
     

@@ -12,6 +12,8 @@ class Config:
     data_text_colour = (0, 0, 0) #color to draw object counts in
     label_font_size = 0.75 #percentage multiplier of font size
     label_font_thickness = 1 #percentage multiple of font thickness
+    
+    MOTDetector = "FRCNN" #What public detection set to use for MOT17 (FRCNN, SDP or DPM)
 
 
    

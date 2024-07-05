@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import os
 
+from .Config import Config
+
 
 class YoloV5ObjectDetector:
     """Wrapper class for still image yolov5 model"""
@@ -127,7 +129,7 @@ def create_brackish_model(cuda = None):
 
 
 def create_MOT_model(vid_name, half=0):
-    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, half=half)
+    return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, half=half, detector=Config.MOTDetector)
 
 
 if __name__ == "__main__":
