@@ -18,6 +18,7 @@ class ByteTrack_Tracker(SORT_Tracker):
                  ):
         
         super().__init__(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
+        self.name = "Byte Track"
         self.low_conf_th = low_conf_th
         self.orignal_conf = model.conf
         model.conf = 0.001

@@ -89,8 +89,6 @@ class SortTracklet(Tracklet):
         
         self.add_box(initial_box, initial_frame_index)
 
-        self.kalman_state_tracklet = Tracklet(-track_id)
-
     def kalman_predict(self):
         predicted_box = self.kf_tracker.predict()
         conf = self.boxes[-1][4]

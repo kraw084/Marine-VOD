@@ -127,6 +127,7 @@ class BoTSORT_Tracker(SORT_Tracker):
     def __init__(self, model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
         super().__init__(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
         self.tracklet_type = BoTSortTracklet
+        self.name = "BoT SORT"
         
         self.cam_comp = CameraMotionCompensation()
     
