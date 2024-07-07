@@ -12,6 +12,7 @@ from vod_methods.SeqNMS import Seq_nms
 from vod_methods.sort import SORT
 from vod_methods.bot_sort import BoT_SORT
 from vod_methods.byte_track import ByteTrack
+from vod_methods.oc_sort import OC_SORT
 
 
 if __name__ == "__main__":
@@ -21,11 +22,13 @@ if __name__ == "__main__":
     print(f"{len(names)} videos found in {data_set} set")
 
     enable_gt = False
+    
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = True
+    enable_ByteTrack = False
+    enable_OCSORT = True
 
     compare_to_gt = False
     overall_metrics = False
@@ -74,6 +77,12 @@ if __name__ == "__main__":
             vid6 = load_MOT17_video(vid_name, half)
             byte_track_tracklets = ByteTrack(MOT17_bot, vid6, iou_min=0.2, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = byte_track_tracklets
+            
+        if enable_OCSORT:
+            vid7 = load_MOT17_video(vid_name, half)
+            oc_sort_tracklets = OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            target_tracklets = oc_sort_tracklets
+
 
         if enable_gt and compare_to_gt:
             gt_ids, pred_ids = correct_ids(gt_tracklets, target_tracklets)

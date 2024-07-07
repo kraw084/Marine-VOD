@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from tqdm import tqdm
 
 from python.vod_methods.sort import SORT_Tracker, SortTracklet
-from python.mv_utils.VOD_utils import iou_matrix
+from python.mv_utils.VOD_utils import iou_matrix, silence
 
 """Cao, J., Pang, J., Weng, X., Khirodkar, R., & Kitani, K. (2023). 
    Observation-centric sort: Rethinking sort for robust multi-object tracking. 
@@ -15,15 +16,20 @@ def lerp_box(box1, box2, t):
     lerped_box = box1 + t * (box2 - box1)
     lerped_box[5] = box1[5]
     return lerped_box
+   
     
 class OC_SortTracklet(SortTracklet):
+    def __init__(self, track_id, initial_box, initial_frame_index, timer):
+        super().__init__(track_id, initial_box, initial_frame_index, timer)
+        self.last_observation = initial_box
+    
     def add_box(self, box, frame_index, im_shape=None, observation=None):
         #if this is the first observation seen after a miss streak trigger ORU
-        if observation and self.miss_streak != 0:
+        if (not observation is None) and self.miss_streak != 0:
             self.observation_centric_reupdate(observation)
         
         #save last observation and KF state for ORU
-        if observation:
+        if (not observation is None):
             self.last_observation = observation
             self.last_kf_x = self.kf_tracker.kf.x
             self.last_kf_p = self.kf_tracker.kf.P
@@ -38,9 +44,14 @@ class OC_SortTracklet(SortTracklet):
         if frame_index > self.end_frame: self.end_frame = frame_index
         
     def observation_centric_reupdate(self, new_observation):
+        print(f"T({self.id}) - ORU with miss streak {self.miss_streak}")
+        print(f"Prev kf.x: {self.kf_tracker.kf.x}")
+                
         #resest kf to before miss streak
         self.kf_tracker.kf.x = self.last_kf_x
         self.kf_tracker.kf.P = self.last_kf_p
+        
+
         
         #for each missing frame run the kf with the interpolated observation to re-update the parameters
         for i in range(self.miss_streak):
@@ -50,6 +61,8 @@ class OC_SortTracklet(SortTracklet):
             updated_box = self.kalman_update(interpolated_box)
             
             #self.boxes[self.last_list_index + i] = updated_box
+            
+        print(f"New kf.x: {self.kf_tracker.kf.x}")
 
 
 class OC_SORT_Tracker(SORT_Tracker):
@@ -89,19 +102,24 @@ class OC_SORT_Tracker(SORT_Tracker):
         
         for i in range(len(self.active_tracklets)):
             tracklet = self.active_tracklets[i]
+            
+            #no penality if tracklet is not long enough
+            if len(tracklet.boxes) < self.orm_t + 1: continue
+            
             last_box = tracklet.boxes[-1]
-            target_box = tracklet.boxes[-1 - self.orm_t] #BOX MAY NOT EXIST
-            tracklet_angle = np.arctan((last_box[1] - target_box[1])/(last_box[0] - target_box[0]))
+            target_box = tracklet.boxes[-1 - self.orm_t]
+            tracklet_angle = np.arctan((last_box[1] - target_box[1])/(last_box[0] - target_box[0] + 1E-10))
             
             for j in range(len(detections)):
                 det = detections[j]
-                target_box = tracklet.boxes[-self.orm_t] #BOX MAY NOT EXIST
-                mat[i, j] = np.abs(np.arctan((det[1] - target_box[1])/(det[0] - target_box[0])) - tracklet_angle)
+                    
+                target_box = tracklet.boxes[-self.orm_t]
+                mat[i, j] = np.abs(np.arctan((det[1] - target_box[1])/(det[0] - target_box[0] + 1E-10)) - tracklet_angle)
                 
         return self.orm_factor * mat
 
         
-    def det_tracklet_matches(self, tracklet_preds, detections):
+    def det_tracklet_matches(self, tracklet_preds, detections, with_orm=True):
         """Perfoms association between tracklets and detections
         Args:
             tracklet_preds: list of tracklet state estimates for every active tracklet
@@ -123,8 +141,12 @@ class OC_SORT_Tracker(SORT_Tracker):
             #determine tracklet pred and detection matching
             iou_mat = iou_matrix(tracklet_preds, detections)
             
+            if with_orm:
+                cost_matrix = iou_mat + self.orm_matrix(detections)
+            else:
+                cost_matrix = iou_mat
             
-            tracklet_indices, detection_indices = linear_sum_assignment(iou_mat, True)
+            tracklet_indices, detection_indices = linear_sum_assignment(cost_matrix, True)
             tracklet_indices, detection_indices = list(tracklet_indices), list(detection_indices)
             
             #remove any matches that are below the iou threshold
@@ -139,3 +161,45 @@ class OC_SORT_Tracker(SORT_Tracker):
         unassigned_det_indices = [j for j in range(num_detections) if j not in detection_indices]
             
         return tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices
+    
+    
+    def track(self):
+        """Runs the SORT algorithm for every frame in the video"""
+        print(f"Starting {self.name}")
+        for i in tqdm(range(self.video.num_of_frames), bar_format="{l_bar}{bar:30}{r_bar}"):
+            tracklet_predictions, detections = self.get_preds(i)
+            
+            tracklet_indices, detection_indices, unassigned_track_indices, \
+            unassigned_det_indices = self.det_tracklet_matches(tracklet_predictions, detections)
+          
+            #Perform observation centric recovery 
+            unassigned_tracklet_last_obs = [self.active_tracklets[j].last_observation for j in unassigned_track_indices]
+            unassigned_dets = [detections[j] for j in unassigned_det_indices]
+            
+            orc_det_indices, orc_tracklet_indices, orc_unassigned_track_indices, \
+            orc_unassigned_det_indices = self.det_tracklet_matches(unassigned_tracklet_last_obs, unassigned_dets, with_orm=False)
+            
+            orc_det_map = lambda x: unassigned_det_indices[x]
+            orc_tracklet_map = lambda x: unassigned_track_indices[x]
+            
+            tracklet_indices = tracklet_indices + list(map(orc_tracklet_map, orc_det_indices))
+            detection_indices = detection_indices + list(map(orc_det_map, orc_tracklet_indices))
+            unassigned_track_indices = list(map(orc_tracklet_map, orc_unassigned_track_indices))
+            unassigned_det_indices = list(map(orc_det_map, orc_unassigned_det_indices))
+            
+            self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
+            
+            self.cleanup_dead_tracklets(unassigned_track_indices)
+            
+            self.cleanup_off_screen()
+           
+        combined_tracklets = self.deceased_tracklets + self.active_tracklets
+        self.cleanup_min_hits(combined_tracklets) 
+        return self.save_and_return(combined_tracklets)
+    
+    
+@silence
+def OC_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, orm_factor = 0.2, orm_t = 3, no_save = False):
+    """Create and run the SORT tracker with a single function"""
+    tracker = OC_SORT_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, orm_factor, orm_t, no_save)
+    return tracker()
