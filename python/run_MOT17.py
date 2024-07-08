@@ -21,13 +21,13 @@ from vod_methods.oc_sort import OC_SORT
 
 if __name__ == "__main__":
     data_set = "train"
-    half = 0
+    half = 2
     names = sorted(vid_names_by_set(data_set))
 
     enable_gt = False
     
-    enable_fbf = True
-    enable_seqNMS = False
+    enable_fbf = False
+    enable_seqNMS = True
     enable_SORT = False
     enable_BoTSORT = False
     enable_ByteTrack = False
@@ -80,12 +80,12 @@ if __name__ == "__main__":
             
         if enable_ByteTrack:
             vid6 = load_MOT17_video(vid_name, half)
-            byte_track_tracklets = ByteTrack(MOT17_bot, vid6, iou_min=0.2, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            byte_track_tracklets = ByteTrack(MOT17_bot, vid6, iou_min=0.2, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = byte_track_tracklets
             
         if enable_OCSORT:
             vid7 = load_MOT17_video(vid_name, half)
-            oc_sort_tracklets = OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            oc_sort_tracklets = OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = oc_sort_tracklets
 
 
@@ -107,10 +107,10 @@ if __name__ == "__main__":
             #metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
             
         else:
-            #save_track_result(target_tracklets, vid_name, "BOT-SORT", "MOT17-train", "SDP")
+            save_track_result(target_tracklets, vid_name, "SeqNMS", "MOT17-half-val", "Exp1")
         
-            target_tracklets.draw_tracklets()
-            target_tracklets.video.play(1080, start_paused = True)
+            #target_tracklets.draw_tracklets()
+            #target_tracklets.video.play(1080, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
             #show_flow(bot_sort_tracklets.video)

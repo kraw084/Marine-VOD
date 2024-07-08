@@ -7,8 +7,8 @@ import colorsys
 import math
 import contextlib
 
-from mv_utils.Video_utils import Video
-from mv_utils.Config import Config
+from python.mv_utils.Video_utils import Video
+from python.mv_utils.Config import Config
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)

@@ -168,7 +168,7 @@ class YoloXObjectDetector:
             h = bbox[3] - bbox[1]
             conf = bbox[4] * bbox[5]
             label = bbox[6]
-            formatted_pred.append([x_center, y_center, w, h, conf, label])
+            formatted_pred.append(np.array([x_center, y_center, w, h, conf, label]))
 
         return formatted_pred
 

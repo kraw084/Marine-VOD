@@ -43,16 +43,11 @@ class OC_SortTracklet(SortTracklet):
         if frame_index < self.start_frame: self.start_frame = frame_index
         if frame_index > self.end_frame: self.end_frame = frame_index
         
-    def observation_centric_reupdate(self, new_observation):
-        print(f"T({self.id}) - ORU with miss streak {self.miss_streak}")
-        print(f"Prev kf.x: {self.kf_tracker.kf.x}")
-                
+    def observation_centric_reupdate(self, new_observation):         
         #resest kf to before miss streak
         self.kf_tracker.kf.x = self.last_kf_x
         self.kf_tracker.kf.P = self.last_kf_p
-        
-
-        
+          
         #for each missing frame run the kf with the interpolated observation to re-update the parameters
         for i in range(self.miss_streak):
             tracklet_pred = self.kalman_predict()
@@ -61,8 +56,6 @@ class OC_SortTracklet(SortTracklet):
             updated_box = self.kalman_update(interpolated_box)
             
             #self.boxes[self.last_list_index + i] = updated_box
-            
-        print(f"New kf.x: {self.kf_tracker.kf.x}")
 
 
 class OC_SORT_Tracker(SORT_Tracker):

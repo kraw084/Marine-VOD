@@ -21,7 +21,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         self.name = "Byte Track"
         self.low_conf_th = low_conf_th
         self.orignal_conf = model.conf
-        model.conf = 0.001
+        self.model.update_parameters(0.001, self.model.iou)
         
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
@@ -63,7 +63,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         combined_tracklets = self.deceased_tracklets + self.active_tracklets
         self.cleanup_min_hits(combined_tracklets) 
         
-        self.model.conf = self.orignal_conf
+        self.model.update_parameters(self.orignal_conf, self.model.iou)
         return self.save_and_return(combined_tracklets)
         
         

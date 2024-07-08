@@ -4,6 +4,7 @@ import sys
 from tqdm import tqdm
 import matplotlib.pyplot as plt    
 
+
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
@@ -385,6 +386,6 @@ def metric_by_frame_graph(video, metric_name, metric_values):
           
           
 if __name__ == "__main__":
-    track_eval("BOT-SORT", "SDP")
+    track_eval(tracker_name="OC-SORT", sub_name="Exp1", dataset_name="MOT17-half", split="val")
 
     
