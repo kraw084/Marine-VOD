@@ -40,7 +40,7 @@ if __name__ == "__main__":
     end = len(names)
     count = 0
     
-    MOT17_bot = create_MOT_YOLOX_model()
+    MOT17_bot = create_MOT_YOLOX_model(True)
 
     for vid_name in names:
         if count < start:

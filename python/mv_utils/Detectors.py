@@ -156,11 +156,14 @@ class YoloXObjectDetector:
         """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
         the x, y, w, h, conf and label codes of each prediction"""
         pred = self(im)[0].cpu().numpy()
+
+        im_size_ratio = min(self.exp.test_size[0] / im.shape[0], self.exp.test_size[1] / im.shape[1])
+        pred[:, :4] = pred[:, :4] / im_size_ratio
         
         formatted_pred = []
-        for bbox in pred:
-            x_center = bbox[0] + bbox[2] / 2
-            y_center = bbox[1] + bbox[3] / 2
+        for bbox in pred:            
+            x_center = (bbox[0] + bbox[2]) / 2
+            y_center = (bbox[1] + bbox[3]) / 2
             w = bbox[2] - bbox[0]
             h = bbox[3] - bbox[1]
             conf = bbox[4] * bbox[5]
