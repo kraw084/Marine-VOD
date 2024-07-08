@@ -1,6 +1,11 @@
 import torch
 import numpy as np
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from YOLOX.exps.custom.yolox_x_ablation import Exp
+from YOLOX.tools.demo import Predictor
 
 
 from mv_utils.Config import Config
@@ -109,6 +114,63 @@ class PublicDetectionsDetector:
         return frame_dets
 
 
+class YoloXObjectDetector:
+    def __init__(self, weight_path, classes, colours, conf=0.6, iou=0.6, cuda=None):
+        self.weight_path = weight_path
+        self.conf = conf
+        self.iou = iou
+        self.cuda = cuda if not cuda is None else torch.cuda.is_available()
+
+        self.num_to_class = classes
+        self.num_to_colour = colours
+
+        device = "gpu" if self.cuda else "cpu"
+        self.exp = Exp()
+        self.exp.test_conf = self.conf
+        self.exp.nmsthre = self.iou
+
+        model = self.exp.get_model()
+        ckpt_file = self.weight_path
+        ckpt = torch.load(ckpt_file, map_location="cpu")
+        model.load_state_dict(ckpt["model"])
+
+        if device == "gpu":
+            model.cuda()
+        model.eval()
+
+        self.model = Predictor(model, self.exp, self.num_to_class, device=device, legacy=True)
+
+    def update_parameters(self, conf=0.6, iou=0.6):
+        self.conf = conf
+        self.exp.test_conf = conf
+        self.iou = iou
+        self.exp.nmsthre = iou
+
+    def predict(self, im):
+        results, _ = self.model.inference(im)
+        return results
+
+    def __call__(self, im):
+        return self.predict(im)
+    
+    def xywhcl(self, im):
+        """Generates a prediction for im and returns a list of 1x6 arrays corrosponding to 
+        the x, y, w, h, conf and label codes of each prediction"""
+        pred = self(im)[0].cpu().numpy()
+        
+        formatted_pred = []
+        for bbox in pred:
+            x_center = bbox[0] + bbox[2] / 2
+            y_center = bbox[1] + bbox[3] / 2
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+            conf = bbox[4] * bbox[5]
+            label = bbox[6]
+            formatted_pred.append([x_center, y_center, w, h, conf, label])
+
+        return formatted_pred
+
+
 def create_urchin_model(cuda = None):
     return YoloV5ObjectDetector("models/urchin_bot.pt",
                                 ["Evechinus chloroticus","Centrostephanus rodgersii"],
@@ -132,6 +194,15 @@ def create_brackish_model(cuda = None):
 def create_MOT_model(vid_name, half=0):
     return PublicDetectionsDetector(vid_name, ["Person"], [(255, 0, 0)], conf=0.6, half=half, detector=Config.MOTDetector)
 
+
+def create_MOT_YOLOX_model(cuda = None):
+    return YoloXObjectDetector("YOLOX/weights/bytetrack_ablation.pth.tar",
+                               ["Person"],
+                               [(255, 0, 0)],
+                               conf = 0.6,
+                               iou = 0.6,
+                               cuda = cuda
+                               )
 
 if __name__ == "__main__":
     #code for testing detectors and displaying their predictions

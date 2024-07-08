@@ -4,3 +4,6 @@
 [submodule "TrackEval"]
 	path = TrackEval
 	url = https://github.com/kraw084/TrackEval.git
+[submodule "YOLOX"]
+	path = YOLOX
+	url = https://github.com/kraw084/YOLOX
