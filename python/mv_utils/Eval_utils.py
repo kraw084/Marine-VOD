@@ -225,6 +225,11 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
         preproc = "False"
         classes = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", "UNKNOWN"]
         gt_dir = "BrackishMOT/"
+    elif dataset_name == "MOT17-half":
+        bench = "MOT17-half"
+        preproc = "True"
+        classes = ["pedestrian"]
+        gt_dir = "TrackEval/data/gt/mot_challenge/"
 
     tracker_dir = "TrackEval_results"
 

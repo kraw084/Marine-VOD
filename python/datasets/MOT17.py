@@ -100,6 +100,47 @@ def vid_names_by_set(data_set = "train"):
     return names
 
 
+def create_half_vid_dataset():
+    dir_path = "E:/Marine-VOD/TrackEval/data/gt/mot_challenge/MOT17-half-val"
+    config = configparser.ConfigParser()
+    half = 2
+
+    for vid_name in os.listdir(dir_path):
+        print(vid_name)
+        config.read(dir_path + "/" + vid_name + "/seqinfo.ini") 
+        max_frame = int(config["Sequence"]["seqLength"])
+
+        if half == 1:
+            new_min_frame = 1
+            new_max_frame = max_frame//2
+        elif half == 2:
+            new_min_frame = max_frame//2 + 1
+            new_max_frame = max_frame
+
+        config.set("Sequence", "seqLength", str(new_max_frame - new_min_frame + 1))
+        with open(dir_path + "/" + vid_name + "/seqinfo.ini", "w") as configfile:
+            config.write(configfile)
+
+        f = open(dir_path + f"/{vid_name}/gt/gt.txt", "r")
+        lines = f.readlines()
+        f.close()
+
+        lines_to_keep = []
+        for row in lines:
+            frame_number = int(row.split(",")[0])
+            if frame_number >= new_min_frame and frame_number <= new_max_frame:
+                if half == 2:
+                    row = [str(frame_number - (new_min_frame - 1))] + row.split(",")[1:]
+                    row = ",".join(row)
+
+                lines_to_keep.append(row)
+
+        print(f"kept {round(len(lines_to_keep)/len(lines), 3)} boxes")
+        f = open(dir_path + f"/{vid_name}/gt/gt.txt", "w")
+        f.writelines(lines_to_keep)
+        f.close()
+
+
 if __name__ == "__main__":
     #create_MOT17_videos()
     
@@ -109,5 +150,7 @@ if __name__ == "__main__":
     #ts = MOT17_gt_tracklet(vid)
     #ts.draw_tracklets()
     #ts.video.play()
+
+    create_half_vid_dataset()
 
     pass
