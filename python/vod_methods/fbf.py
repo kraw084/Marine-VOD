@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 
 from python.mv_utils.VOD_utils import annotate_image, draw_data, Tracklet, TrackletSet, save_VOD
 
@@ -25,12 +26,13 @@ def frame_by_frame_VOD(model, video, no_save=False):
 
 def frame_by_frame_VOD_with_tracklets(model, video, no_save=False):
     """Same as fbf_VOD but returns results as a TrackletSet rather than directly drawing on the video"""
-    frame_predictions = [model.xywhcl(frame) for frame in video]
-    print("Finished predicting")
+    print("Started FBF")
 
     tracklets = []
     id_counter = 0
-    for i, frame_pred in enumerate(frame_predictions):
+    for i in tqdm(range(len(video)), bar_format="{l_bar}{bar:30}{r_bar}"):
+        frame = video.frames[i]
+        frame_pred = model.xywhcl(frame)
         for box in frame_pred:
             new_tracklet = Tracklet(id_counter)
             new_tracklet.add_box(box, i)

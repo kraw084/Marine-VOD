@@ -132,6 +132,9 @@ class Video:
         self.i += 1
         return frame
     
+    def __len__(self):
+        return self.num_of_frames
+    
 
 def stitch_video(left_vid, right_vid, stitched_vid_name=None):
     """Concatenate two videos horizontally, returns a new video"""

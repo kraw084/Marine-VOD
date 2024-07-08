@@ -1,6 +1,10 @@
+import os 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'YOLOX'))
+
 import numpy as np
 
-from mv_utils.Detectors import create_MOT_model
+from mv_utils.Detectors import create_MOT_model, create_MOT_YOLOX_model
 from mv_utils.Video_utils import Video, stitch_video
 from mv_utils.VOD_utils import TrackletSet, frame_skipping, save_VOD
 from mv_utils.Eval_utils import save_track_result, correct_ids, Evaluator, metric_by_frame_graph
@@ -19,16 +23,15 @@ if __name__ == "__main__":
     data_set = "train"
     half = 0
     names = sorted(vid_names_by_set(data_set))
-    print(f"{len(names)} videos found in {data_set} set")
 
     enable_gt = False
     
-    enable_fbf = False
+    enable_fbf = True
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
     enable_ByteTrack = False
-    enable_OCSORT = True
+    enable_OCSORT = False
 
     compare_to_gt = False
     overall_metrics = False
@@ -36,6 +39,8 @@ if __name__ == "__main__":
     start = 0
     end = len(names)
     count = 0
+    
+    MOT17_bot = create_MOT_YOLOX_model()
 
     for vid_name in names:
         if count < start:
@@ -47,7 +52,7 @@ if __name__ == "__main__":
 
         print(vid_name)
 
-        MOT17_bot = create_MOT_model(vid_name, half=half)
+        #MOT17_bot = create_MOT_model(vid_name, half=half)
 
         if enable_gt:
             vid1 = load_MOT17_video(vid_name, half)

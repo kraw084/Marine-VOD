@@ -7,7 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from YOLOX.exps.custom.yolox_x_ablation import Exp
 from YOLOX.tools.demo import Predictor
 
-
 from mv_utils.Config import Config
 
 
@@ -203,6 +202,7 @@ def create_MOT_YOLOX_model(cuda = None):
                                iou = 0.6,
                                cuda = cuda
                                )
+
 
 if __name__ == "__main__":
     #code for testing detectors and displaying their predictions
