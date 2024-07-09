@@ -1,9 +1,10 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter
 
-from python.vod_methods.sort import SORT_Tracker, SortTracklet, KalmanTracker
-from python.mv_utils.Cmc import CameraMotionCompensation
-from python.mv_utils.VOD_utils import silence
+from mv_utils.Cmc import CameraMotionCompensation
+from mv_utils.VOD_utils import silence
+
+from .sort import SORT_Tracker, SortTracklet, KalmanTracker
 
 """Aharon, N., Orfaig, R., & Bobrovsky, B. Z. (2022). BoT-SORT: Robust associations multi-pedestrian tracking. 
 arXiv preprint arXiv:2206.14651."""

@@ -1,13 +1,11 @@
 import torch
 import numpy as np
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from YOLOX.exps.custom.yolox_x_ablation import Exp
 from YOLOX.tools.demo import Predictor
 
-from mv_utils.Config import Config
+from .Config import Config
 
 
 class YoloV5ObjectDetector:

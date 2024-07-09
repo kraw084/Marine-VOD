@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import colorsys
 
-from python.mv_utils.Video_utils import resize_image, Video
+from .Video_utils import resize_image, Video
 
 
 class CameraMotionCompensation:
@@ -164,11 +164,3 @@ def show_flow(vid):
         prev_im = new_im
         prev_points = cv2.goodFeaturesToTrack(prev_im, maxCorners=1000, qualityLevel=0.01, 
                                              minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
-    
-
-
-if __name__ == "__main__":
-    from MOT17 import load_MOT17_video
-
-    vid = load_MOT17_video("MOT17-02")
-    show_flow(vid)

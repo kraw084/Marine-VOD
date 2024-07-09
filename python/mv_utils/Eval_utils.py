@@ -1,15 +1,11 @@
 import numpy as np
 import os
-import sys
 from tqdm import tqdm
 import matplotlib.pyplot as plt    
 
-
-project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-sys.path.append(project_dir)
 from TrackEval.scripts.run_mot_challenge import main
 
-from python.mv_utils.VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+from .VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
 
 
 def correct_preds(gt, preds, iou_th=0.5):
@@ -383,9 +379,3 @@ def metric_by_frame_graph(video, metric_name, metric_values):
     plt.ylabel(metric_name)
     
     plt.show()
-          
-          
-if __name__ == "__main__":
-    track_eval(tracker_name="OC-SORT", sub_name="Exp1", dataset_name="MOT17-half", split="val")
-
-    

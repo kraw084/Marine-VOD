@@ -1,9 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 import time
-from itertools import product
 
-from python.mv_utils.VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD, silence
+from mv_utils.VOD_utils import iou_matrix, Tracklet, TrackletSet, save_VOD, silence
 
 
 """Han, W., Khorrami, P., Paine, T. L., Ramachandran, P., Babaeizadeh, M., Shi, H., ... & Huang, T. S. (2016). 

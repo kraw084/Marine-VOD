@@ -1,7 +1,7 @@
 import os
 from tqdm import tqdm
 
-from python.mv_utils.VOD_utils import annotate_image, draw_data, Tracklet, TrackletSet, save_VOD
+from mv_utils.VOD_utils import annotate_image, draw_data, Tracklet, TrackletSet, save_VOD
 
 
 def frame_by_frame_VOD(model, video, no_save=False):

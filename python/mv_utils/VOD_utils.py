@@ -1,5 +1,4 @@
 import os
-import sys
 import torch
 import cv2
 import numpy as np
@@ -7,12 +6,13 @@ import colorsys
 import math
 import contextlib
 
-from python.mv_utils.Video_utils import Video
-from python.mv_utils.Config import Config
+#from python.mv_utils.Video_utils import Video
+#from python.mv_utils.Config import Config
 
-project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-sys.path.append(project_dir)
 from yolov5.utils.metrics import box_iou, bbox_iou
+
+from .Config import Config
+from .Video_utils import Video
 
 
 NUM_OF_COLOURS = 8

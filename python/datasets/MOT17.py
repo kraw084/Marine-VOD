@@ -3,9 +3,9 @@ import os
 import cv2
 import numpy as np
 
-from python.mv_utils.Video_utils import Video, frames_to_video
-from python.mv_utils.VOD_utils import Tracklet, TrackletSet, annotate_image, round_box
-from python.mv_utils.Detectors import PublicDetectionsDetector
+from mv_utils.Video_utils import Video, frames_to_video
+from mv_utils.VOD_utils import Tracklet, TrackletSet, annotate_image, round_box
+from mv_utils.Detectors import PublicDetectionsDetector
 
 
 def create_MOT17_videos():
@@ -139,18 +139,3 @@ def create_half_vid_dataset():
         f = open(dir_path + f"/{vid_name}/gt/gt.txt", "w")
         f.writelines(lines_to_keep)
         f.close()
-
-
-if __name__ == "__main__":
-    #create_MOT17_videos()
-    
-    #test_mot_detector()
-
-    #vid = Video("MOT17/videos/MOT17-02.mp4")
-    #ts = MOT17_gt_tracklet(vid)
-    #ts.draw_tracklets()
-    #ts.video.play()
-
-    create_half_vid_dataset()
-
-    pass

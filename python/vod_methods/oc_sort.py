@@ -2,8 +2,9 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
-from python.vod_methods.sort import SORT_Tracker, SortTracklet
-from python.mv_utils.VOD_utils import iou_matrix, silence
+from mv_utils.VOD_utils import iou_matrix, silence
+
+from .sort import SORT_Tracker, SortTracklet
 
 """Cao, J., Pang, J., Weng, X., Khirodkar, R., & Kitani, K. (2023). 
    Observation-centric sort: Rethinking sort for robust multi-object tracking. 
