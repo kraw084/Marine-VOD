@@ -27,20 +27,20 @@ if __name__ == "__main__":
     enable_gt = False
     
     enable_fbf = False
-    enable_seqNMS = True
+    enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = False
+    enable_ByteTrack = True
     enable_OCSORT = False
 
     compare_to_gt = False
     overall_metrics = False
 
-    start = 0
+    start = 1
     end = len(names)
     count = 0
     
-    MOT17_bot = create_MOT_YOLOX_model(True)
+    MOT17_bot = create_MOT_YOLOX_model()
 
     for vid_name in names:
         if count < start:
@@ -50,8 +50,9 @@ if __name__ == "__main__":
         if count >= end: break
         count += 1
 
+        vid = load_MOT17_video(vid_name, half)
         print(vid_name)
-
+        
         #MOT17_bot = create_MOT_model(vid_name, half=half)
 
         if enable_gt:
@@ -80,14 +81,13 @@ if __name__ == "__main__":
             
         if enable_ByteTrack:
             vid6 = load_MOT17_video(vid_name, half)
-            byte_track_tracklets = ByteTrack(MOT17_bot, vid6, iou_min=0.2, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            byte_track_tracklets = ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = byte_track_tracklets
             
         if enable_OCSORT:
             vid7 = load_MOT17_video(vid_name, half)
             oc_sort_tracklets = OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
             target_tracklets = oc_sort_tracklets
-
 
         if enable_gt and compare_to_gt:
             gt_ids, pred_ids = correct_ids(gt_tracklets, target_tracklets)
@@ -107,10 +107,10 @@ if __name__ == "__main__":
             #metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
             
         else:
-            save_track_result(target_tracklets, vid_name, "SeqNMS", "MOT17-half-val", "Exp1")
+            #save_track_result(target_tracklets, vid_name, "SeqNMS", "MOT17-half-val", "Exp1")
         
-            #target_tracklets.draw_tracklets()
-            #target_tracklets.video.play(1080, start_paused = True)
+            target_tracklets.draw_tracklets()
+            target_tracklets.video.play(1500, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
             #show_flow(bot_sort_tracklets.video)

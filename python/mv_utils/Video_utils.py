@@ -102,6 +102,9 @@ class Video:
                 temp_delay = delay
             elif key == ord('c'): #increase fps
                 temp_delay = math.ceil(temp_delay/2)
+            elif key == ord('v'): #save video
+                count = len([name for name in os.listdir("results") if name[:name.rfind("_")] == f"{self.name}"])
+                self.save(f"results/{self.name}_{count}.{self.file_type}")
             else:
                 i = min(i + 1, final_index)
             

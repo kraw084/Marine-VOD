@@ -21,7 +21,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         self.name = "Byte Track"
         self.low_conf_th = low_conf_th
         self.orignal_conf = model.conf
-        self.model.update_parameters(0.001, self.model.iou)
+        self.model.update_parameters(0.01, self.model.iou)
         
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
@@ -52,9 +52,16 @@ class ByteTrack_Tracker(SORT_Tracker):
             tracklet_indices = hc_tracklet_indices + list(map(lc_track_map, lc_tracklet_indices))
             detection_indices = list(map(hc_det_map, hc_detection_indices)) + list(map(lc_det_map, lc_detection_indices))
             unassigned_track_indices = list(map(lc_track_map, lc_unassigned_track_indices))
-            unassigned_det_indices = list(map(hc_det_map, hc_unassigned_det_indices)) + list(map(lc_det_map, lc_unassigned_det_indices))
+            unassigned_det_indices = list(map(hc_det_map, hc_unassigned_det_indices)) #+ list(map(lc_det_map, lc_unassigned_det_indices))
                 
-            self.process_matches(tracklet_indices, detection_indices, unassigned_track_indices, unassigned_det_indices, tracklet_predictions, detections, i)
+            self.process_matches(tracklet_indices, 
+                                 detection_indices, 
+                                 unassigned_track_indices, 
+                                 unassigned_det_indices, 
+                                 tracklet_predictions, 
+                                 detections, 
+                                 i,
+                                 kf_bbox_unmatched_tracks=False)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
             

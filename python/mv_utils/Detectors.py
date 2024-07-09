@@ -142,8 +142,11 @@ class YoloXObjectDetector:
     def update_parameters(self, conf=0.6, iou=0.6):
         self.conf = conf
         self.exp.test_conf = conf
+        self.model.confthre = conf
+
         self.iou = iou
         self.exp.nmsthre = iou
+        self.model.nmsthre = iou
 
     def predict(self, im):
         results, _ = self.model.inference(im)
