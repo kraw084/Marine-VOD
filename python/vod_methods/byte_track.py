@@ -1,8 +1,8 @@
 from tqdm import tqdm
 
-from python.vod_methods.sort import SORT_Tracker
-from python.mv_utils.VOD_utils import silence
+from mv_utils.VOD_utils import silence
 
+from .sort import SORT_Tracker
 
 class ByteTrack_Tracker(SORT_Tracker):
     def __init__(self, 

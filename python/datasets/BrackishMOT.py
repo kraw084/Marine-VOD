@@ -1,20 +1,17 @@
 #Malte Pedersen, Joakim Bruslund Haurum, Daniel Lehotsky, and Ivan Nikolov. (2023). BrackishMOT [Data set]. Kaggle.
-
 import os
 import cv2
 import numpy as np
 import configparser
 import random
 import math
-import sys
 
-from python.mv_utils.Video_utils import Video, frames_to_video
-from python.mv_utils.VOD_utils import Tracklet, TrackletSet
-
-project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(project_dir)
 import yolov5.train
 import yolov5.val
+
+from mv_utils.Video_utils import Video, frames_to_video
+from mv_utils.VOD_utils import Tracklet, TrackletSet
+
 
 NUM_TO_LABEL = ["Jellyfish", "Fish", "Crab", "Shrimp", "Starfish", "Smallfish", ""]
 
