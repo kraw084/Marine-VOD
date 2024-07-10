@@ -1,17 +1,3 @@
-#from mv_utils.Detectors import create_MOT_model, create_MOT_YOLOX_model
-#from mv_utils.Video_utils import Video, stitch_video
-#from mv_utils.VOD_utils import TrackletSet, frame_skipping, save_VOD
-#from mv_utils.Eval_utils import save_track_result, correct_ids, Evaluator, metric_by_frame_graph
-#from mv_utils.Cmc import show_flow
-#from datasets.MOT17 import load_MOT17_video, vid_names_by_set, MOT17_gt_tracklet
-
-#from vod_methods.fbf import frame_by_frame_VOD_with_tracklets
-#from vod_methods.SeqNMS import Seq_nms
-#from vod_methods.sort import SORT
-#from vod_methods.bot_sort import BoT_SORT
-#from vod_methods.byte_track import ByteTrack
-#from vod_methods.oc_sort import OC_SORT
-
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc
 from datasets import MOT17
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort

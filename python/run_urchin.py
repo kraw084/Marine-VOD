@@ -1,18 +1,8 @@
 import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'YOLOX'))
 
-from mv_utils.Config import Config
-from mv_utils.Detectors import create_urchin_model
-from mv_utils.Video_utils import Video, stitch_video
-from mv_utils.VOD_utils import TrackletSet, frame_skipping
-from mv_utils.Cmc import show_flow
+from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
+from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
-from vod_methods.fbf import frame_by_frame_VOD_with_tracklets
-from vod_methods.SeqNMS import Seq_nms
-from vod_methods.sort import SORT
-from vod_methods.bot_sort import BoT_SORT
-from vod_methods.byte_track import ByteTrack
 
 if __name__ == "__main__":
 
@@ -28,10 +18,10 @@ if __name__ == "__main__":
 
         count += 1
         
-        vid = Video(urchin_video_folder + vid_name)
+        vid = Video_utils.Video(urchin_video_folder + vid_name)
         print("Finished loading video")
         
-        show_flow(vid)
+        Cmc.show_flow(vid)
         vid.play(start_paused=True)
 
         #sort_tracklets = SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)

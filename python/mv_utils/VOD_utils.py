@@ -6,9 +6,6 @@ import colorsys
 import math
 import contextlib
 
-#from python.mv_utils.Video_utils import Video
-#from python.mv_utils.Config import Config
-
 from yolov5.utils.metrics import box_iou, bbox_iou
 
 from .Config import Config
