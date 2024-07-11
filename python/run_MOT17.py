@@ -12,9 +12,9 @@ if __name__ == "__main__":
     
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = True
+    enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = False
+    enable_ByteTrack = True
     enable_OCSORT = False
 
     compare_to_gt = False
@@ -65,6 +65,9 @@ if __name__ == "__main__":
         if enable_ByteTrack:
             vid6 = MOT17.load_MOT17_video(vid_name, half)
             byte_track_tracklets = byte_track.ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            
+            VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
+
             target_tracklets = byte_track_tracklets
             
         if enable_OCSORT:
@@ -90,10 +93,11 @@ if __name__ == "__main__":
             #metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
             
         else:
-            #save_track_result(target_tracklets, vid_name, "SeqNMS", "MOT17-half-val", "Exp1")
+
+            Eval_utils.save_track_result(target_tracklets, vid_name, "ByteTrack", "MOT17-half-val", "Exp2")
         
-            target_tracklets.draw_tracklets()
-            target_tracklets.video.play(1080, start_paused = True)
+            #target_tracklets.draw_tracklets()
+            #target_tracklets.video.play(1080, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
             #show_flow(bot_sort_tracklets.video)

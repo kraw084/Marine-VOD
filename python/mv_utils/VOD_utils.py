@@ -319,3 +319,40 @@ def trackletSet_frame_by_frame(tracklets):
     return boxes_by_frame, ids_by_frame
 
 
+def lerp_box(box1, box2, t):
+    #linearly interpolate two boxes except for the label value
+    lerped_box = box1 + t * (box2 - box1)
+    lerped_box[5] = box1[5]
+    return lerped_box
+
+
+def interpolate_tracklet(tracklet):
+    last_frame_index = tracklet.frame_indexes[-1]
+
+    frame_index_index = 0
+    while tracklet.frame_indexes[frame_index_index] != last_frame_index:
+        current_frame_index = tracklet.frame_indexes[frame_index_index]
+        next_frame_index = tracklet.frame_indexes[frame_index_index + 1]
+
+        if current_frame_index + 1 != next_frame_index: #gap in frames detected
+            gap_length = next_frame_index - current_frame_index - 1
+
+            if gap_length > 20: continue
+
+            start_box = tracklet.boxes[frame_index_index]
+            end_box = tracklet.boxes[frame_index_index + 1]
+
+            for i in range(1, gap_length + 1):
+                t = i / (gap_length + 1)
+                interpolated_box = lerp_box(start_box, end_box, t)
+
+                tracklet.frame_indexes.insert(frame_index_index + i, current_frame_index + i)
+                tracklet.boxes.insert(frame_index_index + i, interpolated_box)
+
+            frame_index_index += gap_length + 1
+        else:
+            frame_index_index += 1
+
+def interpoalte_tracklet_set(tracklet_set):
+    for t in tracklet_set:
+        interpolate_tracklet(t)
