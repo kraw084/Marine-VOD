@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
-from mv_utils.VOD_utils import iou_matrix, silence
+from mv_utils.VOD_utils import iou_matrix, silence, lerp_box
 
 from .sort import SORT_Tracker, SortTracklet
 
@@ -12,13 +12,6 @@ from .sort import SORT_Tracker, SortTracklet
    (pp. 9686-9696)."""
 
 
-def lerp_box(box1, box2, t):
-    #linearly interpolate two boxes except for the label value
-    lerped_box = box1 + t * (box2 - box1)
-    lerped_box[5] = box1[5]
-    return lerped_box
-   
-    
 class OC_SortTracklet(SortTracklet):
     def __init__(self, track_id, initial_box, initial_frame_index, timer):
         super().__init__(track_id, initial_box, initial_frame_index, timer)

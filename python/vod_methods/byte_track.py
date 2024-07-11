@@ -4,6 +4,11 @@ from mv_utils.VOD_utils import silence
 
 from .sort import SORT_Tracker
 
+
+"""Zhang, Y., Sun, P., Jiang, Y., Yu, D., Weng, F., Yuan, Z., ... & Wang, X. (2022, October). 
+Bytetrack: Multi-object tracking by associating every detection box. In European conference on computer vision (pp. 1-21). 
+Cham: Springer Nature Switzerland."""
+
 class ByteTrack_Tracker(SORT_Tracker):
     def __init__(self, 
                  model, 
@@ -40,6 +45,7 @@ class ByteTrack_Tracker(SORT_Tracker):
             low_conf_indices = [j for j in range(len(detections)) if detections[j][4] <= self.low_conf_th]
             low_conf_dets = [detections[j] for j in low_conf_indices]
             remaining_tracklets = [tracklet_predictions[j] for j in hc_unassigned_track_indices]
+            
             
             lc_tracklet_indices, lc_detection_indices, lc_unassigned_track_indices, \
             lc_unassigned_det_indices = self.det_tracklet_matches(remaining_tracklets, low_conf_dets)
