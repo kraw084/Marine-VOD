@@ -64,7 +64,7 @@ if __name__ == "__main__":
             
         if enable_ByteTrack:
             vid6 = MOT17.load_MOT17_video(vid_name, half)
-            byte_track_tracklets = byte_track.ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            byte_track_tracklets = byte_track.ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=8, probation_timer=5, min_hits=10, no_save=True, silence=False)
             
             VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             target_tracklets.draw_tracklets(pred_ids)
 
             stitched_video = Video_utils.stitch_video(gt_tracklets.video, target_tracklets.video, "gt_vs_tracking.mp4")
-            stitched_video.play(1500, start_paused = True)
+            stitched_video.play(1600, start_paused = True)
 
         elif enable_gt and overall_metrics:
             eval = Eval_utils.Evaluator("SORT", 0.5)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             
         else:
 
-            Eval_utils.save_track_result(target_tracklets, vid_name, "ByteTrack", "MOT17-half-val", "Exp2")
+            Eval_utils.save_track_result(target_tracklets, vid_name, "ByteTrack", "MOT17-half-val", "Exp3")
         
             #target_tracklets.draw_tracklets()
             #target_tracklets.video.play(1080, start_paused = True)

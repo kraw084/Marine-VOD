@@ -26,7 +26,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         self.name = "Byte Track"
         self.low_conf_th = low_conf_th
         self.orignal_conf = model.conf
-        self.model.update_parameters(0.01, self.model.iou)
+        self.model.update_parameters(0.1, self.model.iou)
         
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
@@ -46,10 +46,12 @@ class ByteTrack_Tracker(SORT_Tracker):
             low_conf_dets = [detections[j] for j in low_conf_indices]
             remaining_tracklets = [tracklet_predictions[j] for j in hc_unassigned_track_indices]
             
-            
+            orig_iou = self.iou_min
+            self.iou_min = 0.6
             lc_tracklet_indices, lc_detection_indices, lc_unassigned_track_indices, \
             lc_unassigned_det_indices = self.det_tracklet_matches(remaining_tracklets, low_conf_dets)
-            
+            self.iou_min = orig_iou
+
             #index lists returned from track_det_match are relative to the shortened input list so the indices need to be translated
             hc_det_map = lambda x: high_conf_indices[x]
             lc_det_map = lambda x: low_conf_indices[x]

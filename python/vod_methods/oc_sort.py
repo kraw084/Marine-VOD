@@ -43,12 +43,12 @@ class OC_SortTracklet(SortTracklet):
         self.kf_tracker.kf.P = self.last_kf_p
           
         #for each missing frame run the kf with the interpolated observation to re-update the parameters
-        for i in range(self.miss_streak):
+        for i in range(1, self.miss_streak + 2):
             tracklet_pred = self.kalman_predict()
             t = i/(self.miss_streak + 1)
             interpolated_box = lerp_box(self.last_observation, new_observation, t)
             updated_box = self.kalman_update(interpolated_box)
-            
+
             #self.boxes[self.last_list_index + i] = updated_box
 
 
@@ -96,12 +96,13 @@ class OC_SORT_Tracker(SORT_Tracker):
             last_box = tracklet.boxes[-1]
             target_box = tracklet.boxes[-1 - self.orm_t]
             tracklet_angle = np.arctan((last_box[1] - target_box[1])/(last_box[0] - target_box[0] + 1E-10))
-            
+      
             for j in range(len(detections)):
                 det = detections[j]
                     
                 target_box = tracklet.boxes[-self.orm_t]
-                mat[i, j] = np.abs(np.arctan((det[1] - target_box[1])/(det[0] - target_box[0] + 1E-10)) - tracklet_angle)
+                box_angle = np.arctan((det[1] - target_box[1])/(det[0] - target_box[0] + 1E-10))
+                mat[i, j] = np.abs(box_angle - tracklet_angle)
                 
         return self.orm_factor * mat
 
@@ -129,7 +130,7 @@ class OC_SORT_Tracker(SORT_Tracker):
             iou_mat = iou_matrix(tracklet_preds, detections)
             
             if with_orm:
-                cost_matrix = iou_mat + self.orm_matrix(detections)
+                cost_matrix = iou_mat - self.orm_matrix(detections)
             else:
                 cost_matrix = iou_mat
             

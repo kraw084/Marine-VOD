@@ -231,11 +231,11 @@ def round_box(box):
     return rounded_box
 
 
-def tracklet_off_screen(frame, tracklet):
+def tracklet_off_screen(frame_shape, tracklet):
     if len(tracklet.boxes) == 0: return False
     
     last_box = tracklet.boxes[-1]
-    h, w, _ = frame.shape
+    h, w, _ = frame_shape
     
     top_left_x, top_left_y, bottom_right_x, bottom_right_y = xywhTOxyxy(*last_box[:4])
     

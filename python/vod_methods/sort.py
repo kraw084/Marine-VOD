@@ -126,7 +126,7 @@ class SORT_Tracker:
         
     def get_preds(self, frame_index):
         """Get the model and tracklet predictions for the current frame"""
-        frame_pred =self.model.xywhcl(self.video.frames[frame_index])
+        frame_pred = self.model.xywhcl(self.video.frames[frame_index])
         tracklet_predictions = [t.kalman_predict() for t in self.active_tracklets]
       
         return tracklet_predictions, frame_pred
@@ -217,7 +217,7 @@ class SORT_Tracker:
         for track_i in range(len(self.active_tracklets) - 1, -1, -1):
             track = self.active_tracklets[track_i]
 
-            if tracklet_off_screen(self.video.frames[0], track):
+            if tracklet_off_screen(self.frame_size, track):
                 self.deceased_tracklets.append(track)
                 self.active_tracklets.pop(track_i) 
 
