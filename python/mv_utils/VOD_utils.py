@@ -337,7 +337,9 @@ def interpolate_tracklet(tracklet):
         if current_frame_index + 1 != next_frame_index: #gap in frames detected
             gap_length = next_frame_index - current_frame_index - 1
 
-            if gap_length > 20: continue
+            if gap_length > 20:
+                frame_index_index += 1 
+                continue
 
             start_box = tracklet.boxes[frame_index_index]
             end_box = tracklet.boxes[frame_index_index + 1]

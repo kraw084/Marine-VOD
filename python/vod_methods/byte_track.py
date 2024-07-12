@@ -27,6 +27,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         self.low_conf_th = low_conf_th
         self.orignal_conf = model.conf
         self.model.update_parameters(0.1, self.model.iou)
+        self.kf_est_for_unmatched = False
         
     def track(self):
         """Runs the SORT algorithm for every frame in the video"""
@@ -68,8 +69,7 @@ class ByteTrack_Tracker(SORT_Tracker):
                                  unassigned_det_indices, 
                                  tracklet_predictions, 
                                  detections, 
-                                 i,
-                                 kf_bbox_unmatched_tracks=False)
+                                 i)
             
             self.cleanup_dead_tracklets(unassigned_track_indices)
             

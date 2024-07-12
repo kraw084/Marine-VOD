@@ -118,6 +118,7 @@ class SORT_Tracker:
         self.frame_size = video.frames[0].shape
         self.tracklet_type = SortTracklet
         self.name = "SORT"
+        self.kf_est_for_unmatched = True
         
         self.start_time = time.time()
         self.active_tracklets = []
@@ -221,7 +222,7 @@ class SORT_Tracker:
                 self.deceased_tracklets.append(track)
                 self.active_tracklets.pop(track_i) 
 
-    def process_matches(self, track_is, det_is, un_track_is, un_det_is, track_preds, detections, frame_i, kf_bbox_unmatched_tracks=True):
+    def process_matches(self, track_is, det_is, un_track_is, un_det_is, track_preds, detections, frame_i):
         """Processes the tracklets and detections based on whether they were matched or not
            Args:
                 track_is: list of tracklet indices with matching detections
@@ -241,7 +242,7 @@ class SORT_Tracker:
         #tracklet had no match, update with just kf pred
         for track_i in un_track_is:
             track = self.active_tracklets[track_i]
-            if kf_bbox_unmatched_tracks:
+            if self.kf_est_for_unmatched:
                 track.add_box(track_preds[track_i], frame_i, self.frame_size)
             track.miss_streak += 1
 

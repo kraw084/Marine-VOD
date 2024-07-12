@@ -69,6 +69,7 @@ class OC_SORT_Tracker(SORT_Tracker):
         self.tracklet_type = OC_SortTracklet
         self.orm_factor = orm_factor
         self.orm_t = orm_t
+        self.kf_est_for_unmatched = False
         
     def handle_successful_match(self, assigned_tracklet, assigned_det, frame_index):
         """Handles a successful match between a tracklet and detection by updating the kf state
