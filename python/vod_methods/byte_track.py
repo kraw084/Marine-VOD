@@ -16,15 +16,14 @@ class ByteTrack_Tracker(SORT_Tracker):
                  iou_min=0.2, 
                  t_lost=1, 
                  probation_timer=3, 
-                 min_hits=5,
-                 low_conf_th = 0.6, 
+                 min_hits=5, 
                  greedy_assoc=False, 
                  no_save=False
                  ):
         
         super().__init__(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
         self.name = "Byte Track"
-        self.low_conf_th = low_conf_th
+        self.low_conf_th = model.conf
         self.orignal_conf = model.conf
         self.model.update_parameters(0.1, self.model.iou)
         self.kf_est_for_unmatched = False
