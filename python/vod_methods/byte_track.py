@@ -82,7 +82,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         
         
 @silence
-def ByteTrack(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, low_conf_th = 0.6, greedy_assoc = False, no_save = False):
+def ByteTrack(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
     """Create and run the ByteTrack tracker with a single function"""
-    tracker = ByteTrack_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, low_conf_th, greedy_assoc, no_save)
+    tracker = ByteTrack_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
     return tracker()
