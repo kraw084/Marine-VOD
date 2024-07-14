@@ -12,9 +12,9 @@ if __name__ == "__main__":
     
     enable_fbf = False
     enable_seqNMS = False
-    enable_SORT = True
-    enable_BoTSORT = True
-    enable_ByteTrack = False
+    enable_SORT = False
+    enable_BoTSORT = False
+    enable_ByteTrack = True
     enable_OCSORT = False
 
     compare_to_gt = False
@@ -94,10 +94,10 @@ if __name__ == "__main__":
             
         else:
 
-            #Eval_utils.save_track_result(target_tracklets, vid_name, "SORT", "MOT17-half-val", "Exp2")
+            Eval_utils.save_track_result(target_tracklets, vid_name, "ByteTrack", "MOT17-half-val", "Exp2")
         
             #target_tracklets.draw_tracklets()
-            #target_tracklets.video.play(1500, start_paused = True)
+            #target_tracklets.video.play(1080, start_paused = True)
             
             sort_tracklets.draw_tracklets()
             bot_sort_tracklets.draw_tracklets()
