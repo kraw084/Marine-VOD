@@ -231,11 +231,11 @@ def round_box(box):
     return rounded_box
 
 
-def tracklet_off_screen(frame, tracklet):
+def tracklet_off_screen(frame_shape, tracklet):
     if len(tracklet.boxes) == 0: return False
     
     last_box = tracklet.boxes[-1]
-    h, w, _ = frame.shape
+    h, w, _ = frame_shape
     
     top_left_x, top_left_y, bottom_right_x, bottom_right_y = xywhTOxyxy(*last_box[:4])
     
@@ -337,7 +337,9 @@ def interpolate_tracklet(tracklet):
         if current_frame_index + 1 != next_frame_index: #gap in frames detected
             gap_length = next_frame_index - current_frame_index - 1
 
-            if gap_length > 20: continue
+            if gap_length > 20:
+                frame_index_index += 1 
+                continue
 
             start_box = tracklet.boxes[frame_index_index]
             end_box = tracklet.boxes[frame_index_index + 1]

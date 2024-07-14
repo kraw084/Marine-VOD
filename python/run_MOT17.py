@@ -59,20 +59,20 @@ if __name__ == "__main__":
 
         if enable_BoTSORT:
             vid5 = MOT17.load_MOT17_video(vid_name, half)
-            bot_sort_tracklets = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            bot_sort_tracklets = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            VOD_utils.interpoalte_tracklet_set(bot_sort_tracklets)
             target_tracklets = bot_sort_tracklets
             
         if enable_ByteTrack:
             vid6 = MOT17.load_MOT17_video(vid_name, half)
-            byte_track_tracklets = byte_track.ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
-            
+            byte_track_tracklets = byte_track.ByteTrack(MOT17_bot, vid6, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
-
             target_tracklets = byte_track_tracklets
             
         if enable_OCSORT:
             vid7 = MOT17.load_MOT17_video(vid_name, half)
-            oc_sort_tracklets = oc_sort.OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            oc_sort_tracklets = oc_sort.OC_SORT(MOT17_bot, vid7, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            VOD_utils.interpoalte_tracklet_set(oc_sort_tracklets)
             target_tracklets = oc_sort_tracklets
 
         if enable_gt and compare_to_gt:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             target_tracklets.draw_tracklets(pred_ids)
 
             stitched_video = Video_utils.stitch_video(gt_tracklets.video, target_tracklets.video, "gt_vs_tracking.mp4")
-            stitched_video.play(1500, start_paused = True)
+            stitched_video.play(1600, start_paused = True)
 
         elif enable_gt and overall_metrics:
             eval = Eval_utils.Evaluator("SORT", 0.5)
@@ -99,11 +99,10 @@ if __name__ == "__main__":
             #target_tracklets.draw_tracklets()
             #target_tracklets.video.play(1080, start_paused = True)
             
-            #sort_tracklets.draw_tracklets()
-            #show_flow(bot_sort_tracklets.video)
-            #bot_sort_tracklets.draw_tracklets()
-            #stitched_video = stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot.mp4")
-            #stitched_video.play(1500, start_paused = True)
+            sort_tracklets.draw_tracklets()
+            bot_sort_tracklets.draw_tracklets()
+            stitched_video = Video_utils.stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot_sort.mp4")
+            stitched_video.play(1700, start_paused = True)
 
 
     if enable_gt and overall_metrics:

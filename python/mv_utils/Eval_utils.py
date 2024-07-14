@@ -331,7 +331,7 @@ class Evaluator:
                 self.eval_frame(i)
             
         #calculate mostly tracked, partially tracked and mostly lost based on gt tracklet lifetime
-        gt_lifetimes_props = [self.gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in self.gt_tracklets]
+        gt_lifetimes_props = self.compute_gt_track_status()
         for duration in gt_lifetimes_props:
             if duration >= 0.8:
                 self.mt += 1
@@ -339,6 +339,10 @@ class Evaluator:
                 self.ml += 1
             else:
                 self.pt += 1
+                
+    def compute_gt_track_status(self):
+        """Computes the proportion of frames that a gt tracklet had a match"""
+        return [self.gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in self.gt_tracklets]
      
                     
     def compute_metrics(self):
@@ -371,11 +375,3 @@ class Evaluator:
             yield self.compute_metrics()
    
    
-def metric_by_frame_graph(video, metric_name, metric_values):
-    """Create a graph to display how a given metric changes throughout the video"""
-    plt.plot(range(video.num_of_frames), metric_values, color="red")
-    plt.title(f"{metric_name} by frame - {video.name}")
-    plt.xlabel("Frame")
-    plt.ylabel(metric_name)
-    
-    plt.show()

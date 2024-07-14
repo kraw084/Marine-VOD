@@ -2,7 +2,7 @@ import torch
 import os
 
 class Config:
-    drive = "D" #what drive to find files on (D or E)
+    drive = "E" #what drive to find files on (D or E)
     cuda = torch.cuda.is_available() #use cuda or not
     os.environ["TQDM_DISABLE"] = "0"
 
@@ -14,7 +14,7 @@ class Config:
     label_font_thickness = 1 #percentage multiple of font thickness
 
     low_conf_colour = (255, 255, 255) #colour low conf labels differently (useful for testing byte track), set to none to colour them normally
-    low_conf_th = 0.6 #conf score to be considered low conf for colouring purposes
+    low_conf_th = 0.45 #conf score to be considered low conf for colouring purposes
 
     MOTDetector = "FRCNN" #What public detection set to use for MOT17 (FRCNN, SDP or DPM)
 
