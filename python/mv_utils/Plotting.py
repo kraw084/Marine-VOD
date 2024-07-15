@@ -33,4 +33,29 @@ def mt_heatmap(video, gt_tracklets, tracklet_sets, tracker_names):
     plt.xticks(fontsize=8)
     plt.tight_layout()
     plt.show()
-        
+
+
+def tracklet_trail_graph(gt_tracklet, pred_tracklets, tracker_names, video):
+    gt_points = [(box[0], box[1]) for _, box in gt_tracklet]
+    pred_points = [[(box[0], box[1]) for _, box in t] for t in pred_tracklets]
+
+    w, h = video.size
+
+    matplotlib.use('TkAgg')
+
+    x, y = [p[0] for p in gt_points], [p[1] for p in gt_points]
+    plt.plot(x, y, label=f"GT ({len(x)})", color="green")
+
+    colours = ["red", "blue", "cyan", "magenta", "yellow"][:len(tracker_names)]
+    for points, name, colour in zip(pred_points, tracker_names, colours):
+        x, y = [p[0] for p in points], [p[1] for p in points]
+        plt.plot(x, y, label=f"{name} ({len(x)})", color=colour)
+
+    plt.xlim(0, w)
+    plt.ylim(h, 0)
+    plt.legend()
+    plt.title(f"Trail of gt {gt_tracklet.id} in video {video.name}")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+
+    plt.show()

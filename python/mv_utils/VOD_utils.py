@@ -142,6 +142,7 @@ class TrackletSet:
         self.tracklets = tracklets
         self.objects_count = len(self.tracklets)
 
+        self.id_to_index = {track.id:i for i, track in enumerate(tracklets)}
         self.num_to_label = num_to_label
 
     def count_per_frame(self):

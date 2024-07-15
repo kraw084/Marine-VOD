@@ -1,4 +1,4 @@
-from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc
+from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Plotting
 from datasets import MOT17
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
@@ -14,8 +14,8 @@ if __name__ == "__main__":
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = True
-    enable_OCSORT = False
+    enable_ByteTrack = False
+    enable_OCSORT = True
 
     compare_to_gt = False
     overall_metrics = False
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     end = len(names)
     count = 0
     
-    MOT17_bot = Detectors.create_MOT_YOLOX_model()
+    MOT17_bot = Detectors.create_MOT_YOLOX_model(True)
 
     for vid_name in names:
         if count < start:
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
         if enable_gt:
             vid1 = MOT17.load_MOT17_video(vid_name, half)
-            gt_tracklets = MOT17.MOT17_gt_tracklet(vid1, conf_threshold=0.5, half=half)
+            gt_tracklets = MOT17.MOT17_gt_tracklet(vid1, conf_threshold=0.0, half=half)
 
         if enable_fbf:
             vid2 = MOT17.load_MOT17_video(vid_name, half)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             target_tracklets.draw_tracklets(pred_ids)
 
             stitched_video = Video_utils.stitch_video(gt_tracklets.video, target_tracklets.video, "gt_vs_tracking.mp4")
-            stitched_video.play(1600, start_paused = True)
+            stitched_video.play(2200, start_paused = True)
 
         elif enable_gt and overall_metrics:
             eval = Eval_utils.Evaluator("SORT", 0.5)
@@ -94,15 +94,15 @@ if __name__ == "__main__":
             
         else:
 
-            Eval_utils.save_track_result(target_tracklets, vid_name, "ByteTrack", "MOT17-half-val", "Exp2")
+            Eval_utils.save_track_result(target_tracklets, vid_name, "OC-SORT", "MOT17-half-val", "ORU_ORC")
         
             #target_tracklets.draw_tracklets()
-            #target_tracklets.video.play(1080, start_paused = True)
+            #target_tracklets.video.play(1600, start_paused = True)
             
-            sort_tracklets.draw_tracklets()
-            bot_sort_tracklets.draw_tracklets()
-            stitched_video = Video_utils.stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot_sort.mp4")
-            stitched_video.play(1700, start_paused = True)
+            #sort_tracklets.draw_tracklets()
+            #bot_sort_tracklets.draw_tracklets()
+            #stitched_video = Video_utils.stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot_sort.mp4")
+            #stitched_video.play(1700, start_paused = True)
 
 
     if enable_gt and overall_metrics:

@@ -267,6 +267,8 @@ class Evaluator:
         self.gt_detection_lifetimes = {gt_track.id:0 for gt_track in gt_tracklets}
         self.gt_is_tracked = {gt_track.id:False for gt_track in gt_tracklets}
         self.corresponding_id = {}
+
+        self.match_matrix = np.zeros((len(gt_tracklets), len(pred_tracklets)))
         
         self.gt_boxes_by_frame, self.gt_ids_by_frame = trackletSet_frame_by_frame(gt_tracklets)
         self.preds_by_frame, self.pred_ids_by_frame = trackletSet_frame_by_frame(pred_tracklets)
@@ -292,6 +294,9 @@ class Evaluator:
             for gt_index, pred_index in matches:
                 gt_tracklet_id = self.gt_ids_by_frame[frame_index][gt_index]
                 pred_tracklet_id = self.pred_ids_by_frame[frame_index][pred_index]
+
+                self.match_matrix[self.gt_tracklets.id_to_index[gt_tracklet_id], 
+                                  self.pred_tracklets.id_to_index[pred_tracklet_id]] += 1
 
                 new_gt_is_tracked[gt_tracklet_id] = True
 
@@ -344,6 +349,9 @@ class Evaluator:
         """Computes the proportion of frames that a gt tracklet had a match"""
         return [self.gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in self.gt_tracklets]
      
+    def id_of_best_match(self):
+        """Returns a list of the pred tracklet id that each gt had the most number of hits with"""
+        return [self.pred_tracklets.tracklets[i].id for i in np.argmax(self.match_matrix, axis=1)]
                     
     def compute_metrics(self):
         """Computes metrics from the components"""
