@@ -106,7 +106,7 @@ class SortTracklet(Tracklet):
 
 
 class SORT_Tracker:
-    def __init__(self, model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
+    def __init__(self, model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False, kf_est_for_unmatched=True):
         self.model = model
         self.video = video
         self.iou_min = iou_min
@@ -118,7 +118,7 @@ class SORT_Tracker:
         self.frame_size = video.frames[0].shape
         self.tracklet_type = SortTracklet
         self.name = "SORT"
-        self.kf_est_for_unmatched = True
+        self.kf_est_for_unmatched = kf_est_for_unmatched
         
         self.start_time = time.time()
         self.active_tracklets = []
@@ -285,7 +285,7 @@ class SORT_Tracker:
         return self.track()
     
 @silence
-def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
+def SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False, kf_est_for_unmatched=True):
     """Create and run the SORT tracker with a single function"""
-    tracker = SORT_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
+    tracker = SORT_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save, kf_est_for_unmatched)
     return tracker()
