@@ -42,7 +42,7 @@ def draw_box(im, box, label, colour, id = None):
     if Config.low_conf_colour and box[4] < Config.low_conf_th: colour = Config.low_conf_colour
     
     box = round_box(box)
-    box_thickness = 3
+    box_thickness = round(3 * Config.box_thickness)
     text_thickness = math.floor(3 * Config.label_font_thickness)
     font_size = 1 * Config.label_font_size
     top_left = (int(box[0]) - int(box[2])//2, int(box[1]) - int(box[3])//2)
@@ -174,7 +174,7 @@ class TrackletSet:
 
         if annotate_data:
             for i, frame in enumerate(frames):
-                draw_data(frame, {"Objects":counts[i], "Total":totals[i]})
+                draw_data(frame, {"Frame":i, "Objects":counts[i], "Total":totals[i]})
 
     def __iter__(self):
         self.i = 0

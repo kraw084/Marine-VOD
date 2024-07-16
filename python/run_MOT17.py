@@ -1,11 +1,14 @@
-from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Plotting
+import cv2
+import numpy as np
+
+from mv_utils import Config, Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Plotting
 from datasets import MOT17
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
 
 if __name__ == "__main__":
     data_set = "train"
-    half = 2
+    half = 0
     names = sorted(MOT17.vid_names_by_set(data_set))
 
     enable_gt = False
@@ -13,14 +16,14 @@ if __name__ == "__main__":
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = False
-    enable_BoTSORT = False
+    enable_BoTSORT = True
     enable_ByteTrack = False
-    enable_OCSORT = True
+    enable_OCSORT = False
 
     compare_to_gt = False
     overall_metrics = False
 
-    start = 0
+    start = 6
     end = len(names)
     count = 0
     
@@ -54,12 +57,13 @@ if __name__ == "__main__":
 
         if enable_SORT:
             vid4 = MOT17.load_MOT17_video(vid_name, half)
-            sort_tracklets = sort.SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            sort_tracklets = sort.SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
+            VOD_utils.interpoalte_tracklet_set(sort_tracklets)
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
             vid5 = MOT17.load_MOT17_video(vid_name, half)
-            bot_sort_tracklets = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            bot_sort_tracklets, tracker = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(bot_sort_tracklets)
             target_tracklets = bot_sort_tracklets
             
@@ -84,25 +88,56 @@ if __name__ == "__main__":
             stitched_video.play(2200, start_paused = True)
 
         elif enable_gt and overall_metrics:
+            target_tracklets = sort_tracklets
             eval = Eval_utils.Evaluator("SORT", 0.5)
             eval.set_tracklets(gt_tracklets, target_tracklets)
             eval.eval_video(loading_bar=False)
             eval.print_metrics(True)
             
-            #mota = [results[2] for results in eval.metrics_fbf()]
-            #metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
+            mota = [results[2] for results in eval.metrics_fbf()]
+            Plotting.metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
+
+            target_tracklets = bot_sort_tracklets
+            eval = Eval_utils.Evaluator("BOT-SORT", 0.5)
+            eval.set_tracklets(gt_tracklets, target_tracklets)
+            eval.eval_video(loading_bar=False)
+            eval.print_metrics(True)
+            
+            mota = [results[2] for results in eval.metrics_fbf()]
+            Plotting.metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
             
         else:
 
-            Eval_utils.save_track_result(target_tracklets, vid_name, "OC-SORT", "MOT17-half-val", "ORU_ORC")
-        
-            #target_tracklets.draw_tracklets()
-            #target_tracklets.video.play(1600, start_paused = True)
+            #Eval_utils.save_track_result(target_tracklets, vid_name, "SORT", "MOT17-half-val", "Exp2")
+
+            Cmc.show_flow(target_tracklets.video)
+
+            target_tracklets.draw_tracklets()
+
+            untr_boxes = tracker.untransformed_boxes
+            for fr_i, id, box in untr_boxes:
+                VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[0], "", (255, 255, 255), id)
+                VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[1], "", (125, 125, 125), id)
+
+            center = (100, 100)
+            length = 75
+
+            for frame, mat in zip(target_tracklets.video, tracker.mats):
+                cv2.rectangle(frame, (round(center[0] - length * 1.1), round(center[1] - length * 1.1)), 
+                             (round(center[0] + length * 1.1), round(center[1] + length * 1.1)),
+                             (0, 0, 0), -1)
+                
+                endpoint = (mat[:2, :2] @ np.array(center)) + mat[:2, 2]
+                #endpoint *= length/np.linalg.norm(endpoint)
+
+                Cmc.draw_flow_arrows(frame, [np.array(center)], [endpoint])
+
+            target_tracklets.video.play(1800, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
             #bot_sort_tracklets.draw_tracklets()
             #stitched_video = Video_utils.stitch_video(sort_tracklets.video, bot_sort_tracklets.video, "sort_vs_bot_sort.mp4")
-            #stitched_video.play(1700, start_paused = True)
+            #stitched_video.play(1800, start_paused = True)
 
 
     if enable_gt and overall_metrics:

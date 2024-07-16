@@ -70,11 +70,13 @@ class BoTKalmanTracker(KalmanTracker):
 
         self.kf.predict()
 
+        pre_t_x = self.kf.x
+
         if not mat is None: #if a transformation mat is supplied use it on kf prediction
             self.apply_transform(mat)
 
         predicted_state = self.kf.x
-        return self.state_to_box(predicted_state[:4])
+        return self.state_to_box(predicted_state[:4]), self.state_to_box(pre_t_x[:4])
     
     def apply_transform(self, mat):
         #extract components of the transformation matrix
@@ -109,10 +111,10 @@ class BoTSortTracklet(SortTracklet):
         self.kf_tracker = BoTKalmanTracker(initial_box)
         
     def kalman_predict(self, mat = None):
-        predicted_box = self.kf_tracker.predict(mat)
+        predicted_box, unt_box = self.kf_tracker.predict(mat)
         conf = self.boxes[-1][4]
         label = self.boxes[-1][5]
-        return np.array([*predicted_box, conf, label])
+        return np.array([*predicted_box, conf, label]), np.array([*unt_box, conf, label])
     
     def kalman_update(self, measurement):
         updated_box = self.kf_tracker.update(measurement)
@@ -132,13 +134,23 @@ class BoTSORT_Tracker(SORT_Tracker):
         self.kf_est_for_unmatched = False
         
         self.cam_comp = CameraMotionCompensation()
+
+        self.untransformed_boxes = []
+        self.mats = []
     
     def get_preds(self, frame_index):
         """Get the model and tracklet predictions (with camera motion compensation) for the current frame"""
         cam_comp_mat = self.cam_comp.find_transform(self.video.frames[frame_index])
+        self.mats.append(cam_comp_mat)
+
         frame_pred =self.model.xywhcl(self.video.frames[frame_index])
         tracklet_predictions = [t.kalman_predict(cam_comp_mat) for t in self.active_tracklets]
+
+        for t, tracklet_pred in zip(self.active_tracklets, tracklet_predictions):
+            self.untransformed_boxes.append((frame_index, t.id, tracklet_pred))   
       
+        tracklet_predictions = [x[0] for x in tracklet_predictions]
+
         return tracklet_predictions, frame_pred
     
     
@@ -146,4 +158,4 @@ class BoTSORT_Tracker(SORT_Tracker):
 def BoT_SORT(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
     """Create and run the SORT tracker with a single function"""
     tracker = BoTSORT_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
-    return tracker()
+    return tracker(), tracker

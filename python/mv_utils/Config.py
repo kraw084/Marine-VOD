@@ -4,7 +4,7 @@ import os
 class Config:
     urchin_vid_path = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/urchin video/All"
     cuda = torch.cuda.is_available() #use cuda or not
-    os.environ["TQDM_DISABLE"] = "0"
+    os.environ["TQDM_DISABLE"] = "1"
 
     draw_labels = True #draw labels when drawing bounding boxes
     minimal_labels = True #only draw id number and conf score in label
