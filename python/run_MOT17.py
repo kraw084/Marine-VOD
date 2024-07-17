@@ -11,7 +11,7 @@ if __name__ == "__main__":
     half = 0
     names = sorted(MOT17.vid_names_by_set(data_set))
 
-    enable_gt = False
+    enable_gt = True
     
     enable_fbf = False
     enable_seqNMS = False
@@ -20,10 +20,10 @@ if __name__ == "__main__":
     enable_ByteTrack = False
     enable_OCSORT = False
 
-    compare_to_gt = False
+    compare_to_gt = True
     overall_metrics = False
 
-    start = 6
+    start = 0
     end = len(names)
     count = 0
     
@@ -57,13 +57,12 @@ if __name__ == "__main__":
 
         if enable_SORT:
             vid4 = MOT17.load_MOT17_video(vid_name, half)
-            sort_tracklets = sort.SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
-            VOD_utils.interpoalte_tracklet_set(sort_tracklets)
+            sort_tracklets = sort.SORT(MOT17_bot, vid4, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=True)
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
             vid5 = MOT17.load_MOT17_video(vid_name, half)
-            bot_sort_tracklets, tracker = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            bot_sort_tracklets = bot_sort.BoT_SORT(MOT17_bot, vid5, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(bot_sort_tracklets)
             target_tracklets = bot_sort_tracklets
             
@@ -110,28 +109,7 @@ if __name__ == "__main__":
 
             #Eval_utils.save_track_result(target_tracklets, vid_name, "SORT", "MOT17-half-val", "Exp2")
 
-            Cmc.show_flow(target_tracklets.video)
-
             target_tracklets.draw_tracklets()
-
-            untr_boxes = tracker.untransformed_boxes
-            for fr_i, id, box in untr_boxes:
-                VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[0], "", (255, 255, 255), id)
-                VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[1], "", (125, 125, 125), id)
-
-            center = (100, 100)
-            length = 75
-
-            for frame, mat in zip(target_tracklets.video, tracker.mats):
-                cv2.rectangle(frame, (round(center[0] - length * 1.1), round(center[1] - length * 1.1)), 
-                             (round(center[0] + length * 1.1), round(center[1] + length * 1.1)),
-                             (0, 0, 0), -1)
-                
-                endpoint = (mat[:2, :2] @ np.array(center)) + mat[:2, 2]
-                #endpoint *= length/np.linalg.norm(endpoint)
-
-                Cmc.draw_flow_arrows(frame, [np.array(center)], [endpoint])
-
             target_tracklets.video.play(1800, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
