@@ -100,7 +100,7 @@ def cmc_registration(vid_path, affine=True):
     new_vid.play(1500, start_paused=True)
 
 
-def draw_flow_arrows(im, start_points, end_points):
+def draw_flow_arrows(im, start_points, end_points, thickness=2, length_scalar=1):
     """Takes a set of feature points and moved points (from flow calculations) and draws the vectors onto the image"""
     for p1, p2 in zip(start_points, end_points):
         if len(start_points[0].shape) == 2:
@@ -121,10 +121,13 @@ def draw_flow_arrows(im, start_points, end_points):
         col = colorsys.hsv_to_rgb(1 - angle, 1, 1)
         col = (round(255 * col[0]), round(255 * col[1]), round(255 * col[2]))
 
+        if length_scalar != 1:
+            p2 = p1 + arrow_dir * length_scalar
+
         #draw the arrow
         p1 = p1.astype(int)
         p2 = p2.astype(int)
-        cv2.arrowedLine(im, (p1[0], p1[1]), (p2[0], p2[1]), col, 2, line_type=cv2.LINE_AA)
+        cv2.arrowedLine(im, (p1[0], p1[1]), (p2[0], p2[1]), col, thickness, line_type=cv2.LINE_AA)
 
 
 def draw_flow_colour_indicator(im, center, length, num):
@@ -164,3 +167,22 @@ def show_flow(vid):
         prev_im = new_im
         prev_points = cv2.goodFeaturesToTrack(prev_im, maxCorners=1000, qualityLevel=0.01, 
                                              minDistance=1, blockSize=3, useHarrisDetector=False, k=0.04)
+
+
+def show_transformation(video, matrices, rows=4, cols=5):
+    w, h = video.size
+    padding_size = 0.2
+    w_pad = w * padding_size
+    h_pad = h * padding_size
+
+    x_values = np.linspace(w_pad, w - w_pad, cols)
+    y_values = np.linspace(h_pad, h - h_pad, rows)
+
+    x_coord, y_coord = np.meshgrid(x_values, y_values)
+
+    points = np.vstack([x_coord.ravel(), y_coord.ravel()]).T
+    
+    for frame, mat in zip(video, matrices):
+        apply_tr = lambda x: (mat[:2, :2] @ x) + mat[:2, 2]
+        transformed_points = np.apply_along_axis(apply_tr, axis=1, arr=points)
+        draw_flow_arrows(frame, points, transformed_points, thickness=16, length_scalar=5)

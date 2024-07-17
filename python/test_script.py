@@ -7,9 +7,10 @@ from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config,
 from datasets import MOT17, BrackishMOT
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
-Eval_utils.track_eval(tracker_name="SORT", sub_name="Exp2", dataset_name="MOT17-half", split='val')
+#Eval_utils.track_eval(tracker_name="SORT", sub_name="Exp2", dataset_name="MOT17-half", split='val')
 
-"""
+
+""""
 urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
 urchin_vid_name = os.listdir(Config.Config.urchin_vid_path)[1]
 vid = Video_utils.Video(Config.Config.urchin_vid_path + "/" + urchin_vid_name)

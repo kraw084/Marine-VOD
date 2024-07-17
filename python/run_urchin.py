@@ -1,4 +1,6 @@
 import os
+import cv2
+import numpy as np
 
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
@@ -16,7 +18,7 @@ if __name__ == "__main__":
     enable_ByteTrack = False
     enable_OCSORT = False
 
-    start = 0
+    start = 4
     count = 0
     for vid_name in os.listdir(urchin_video_folder):
         if count < start:
@@ -40,7 +42,7 @@ if __name__ == "__main__":
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
-            bot_sort_tracklets = bot_sort.BoT_SORT(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            bot_sort_tracklets, tracker = bot_sort.BoT_SORT(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(bot_sort_tracklets)
             target_tracklets = bot_sort_tracklets
             
@@ -55,7 +57,18 @@ if __name__ == "__main__":
             target_tracklets = oc_sort_tracklets      
 
 
+        Cmc.show_transformation(vid, tracker.mats)
+
+
+        #Cmc.show_flow(target_tracklets.video)
+
         target_tracklets.draw_tracklets()
+
+        untr_boxes = tracker.untransformed_boxes
+        for fr_i, id, box in untr_boxes:
+            VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[0], "", (255, 255, 255), id)
+            VOD_utils.draw_box(target_tracklets.video.frames[fr_i], box[1], "", (125, 125, 125), id)
+
         target_tracklets.video.play(1800, start_paused=True)  
         
-       
+        
