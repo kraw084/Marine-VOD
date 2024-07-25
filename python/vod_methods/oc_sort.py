@@ -159,7 +159,7 @@ class OC_SORT_Tracker(SORT_Tracker):
             tracklet_predictions, detections = self.get_preds(i)
             
             tracklet_indices, detection_indices, unassigned_track_indices, \
-            unassigned_det_indices = self.det_tracklet_matches(tracklet_predictions, detections)
+            unassigned_det_indices = self.det_tracklet_matches(tracklet_predictions, detections, True)
           
             #Perform observation centric recovery 
             unassigned_tracklet_last_obs = [self.active_tracklets[j].last_observation for j in unassigned_track_indices]

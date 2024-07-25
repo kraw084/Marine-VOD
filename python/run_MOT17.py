@@ -8,7 +8,7 @@ from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
 if __name__ == "__main__":
     data_set = "train"
-    half = 0
+    half = 2
     names = sorted(MOT17.vid_names_by_set(data_set))
 
     enable_gt = True
@@ -16,11 +16,11 @@ if __name__ == "__main__":
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = False
-    enable_BoTSORT = True
+    enable_BoTSORT = False
     enable_ByteTrack = False
-    enable_OCSORT = False
+    enable_OCSORT = True
 
-    compare_to_gt = True
+    compare_to_gt = False
     overall_metrics = False
 
     start = 0
@@ -95,22 +95,12 @@ if __name__ == "__main__":
             
             mota = [results[2] for results in eval.metrics_fbf()]
             Plotting.metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
-
-            target_tracklets = bot_sort_tracklets
-            eval = Eval_utils.Evaluator("BOT-SORT", 0.5)
-            eval.set_tracklets(gt_tracklets, target_tracklets)
-            eval.eval_video(loading_bar=False)
-            eval.print_metrics(True)
-            
-            mota = [results[2] for results in eval.metrics_fbf()]
-            Plotting.metric_by_frame_graph(target_tracklets.video, "MOTA", mota)
-            
         else:
 
-            #Eval_utils.save_track_result(target_tracklets, vid_name, "SORT", "MOT17-half-val", "Exp2")
+            Eval_utils.save_track_result(target_tracklets, vid_name, "OC-SORT", "MOT17-half-val", "AbTest-4")
 
-            target_tracklets.draw_tracklets()
-            target_tracklets.video.play(1800, start_paused = True)
+            #target_tracklets.draw_tracklets()
+            #target_tracklets.video.play(1800, start_paused = True)
             
             #sort_tracklets.draw_tracklets()
             #bot_sort_tracklets.draw_tracklets()
