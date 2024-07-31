@@ -131,12 +131,13 @@ class BoTSORT_Tracker(SORT_Tracker):
         self.name = "BoT SORT"
         self.kf_est_for_unmatched = False
         
+        self.enable_cmc = True
         self.cam_comp = CameraMotionCompensation()
 
     
     def get_preds(self, frame_index):
         """Get the model and tracklet predictions (with camera motion compensation) for the current frame"""
-        cam_comp_mat = self.cam_comp.find_transform(self.video.frames[frame_index])
+        cam_comp_mat = self.cam_comp.find_transform(self.video.frames[frame_index]) if self.enable_cmc else None
         frame_pred =self.model.xywhcl(self.video.frames[frame_index])
         tracklet_predictions = [t.kalman_predict(cam_comp_mat) for t in self.active_tracklets]
 
