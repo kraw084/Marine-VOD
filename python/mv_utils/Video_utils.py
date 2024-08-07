@@ -155,3 +155,21 @@ def stitch_video(left_vid, right_vid, stitched_vid_name=None):
     new_vid.set_frames(new_frames, left_vid.fps)
     
     return new_vid
+
+
+def sample_frames(video, n):
+    new_frames = []
+    for i in range(0, len(video), n):
+        new_frames.append(video.frames[i])
+
+    print(f"Name: {video.full_name}")
+    print(f"Original num of frames: {len(video)}")
+    print(f"New num of frames: {len(new_frames)}")
+
+    video.set_frames(new_frames, video.fps)
+
+
+def save_as_frames(video, save_dir):
+    target_dir = save_dir + "/" + video.full_name
+    for i, frame in enumerate(video):
+        cv2.imwrite(target_dir + f"/{i}.jpg", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
