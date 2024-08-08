@@ -170,6 +170,7 @@ def sample_frames(video, n):
 
 
 def save_as_frames(video, save_dir):
-    target_dir = save_dir + "/" + video.full_name
+    target_dir = save_dir + "/" + video.name
+    os.mkdir(target_dir)
     for i, frame in enumerate(video):
         cv2.imwrite(target_dir + f"/{i}.jpg", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))

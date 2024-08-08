@@ -8,7 +8,7 @@ from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
 
 if __name__ == "__main__":
 
-    #urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
+    urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
     urchin_video_folder = Config.Config.urchin_vid_path
 
     enable_fbf = False
@@ -28,17 +28,9 @@ if __name__ == "__main__":
         count += 1
         
         vid = Video_utils.Video(urchin_video_folder + "/" + vid_name)
-        if vid.fps > 60: continue
-
-        Video_utils.sample_frames(vid, 5)
-        vid.play(start_paused=True)
-        Video_utils.save_as_frames(vid, r"C:\Users\kraw084\OneDrive - The University of Auckland\Desktop\sampled_videos")
-        print("Finished\n")
-
-        continue
 
         if enable_fbf:
-            fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid, True)
+            fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid, True) 
             target_tracklets = fbf_tracklets
 
         if enable_seqNMS:
@@ -67,4 +59,4 @@ if __name__ == "__main__":
 
         target_tracklets.video.play(1800, start_paused=True)  
         
-        
+    print(frame_count)
