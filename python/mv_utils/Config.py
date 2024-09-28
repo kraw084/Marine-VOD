@@ -2,7 +2,7 @@ import torch
 import os
 
 class Config:
-    urchin_vid_path = "E:/urchin video/All"
+    urchin_vid_path = r"C:\Users\kraw084\OneDrive - The University of Auckland\Desktop\urchin video\All"
     cuda = torch.cuda.is_available() #use cuda or not
     os.environ["TQDM_DISABLE"] = "1"
 

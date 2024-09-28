@@ -15,7 +15,7 @@ if __name__ == "__main__":
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = True
-    enable_ByteTrack = False
+    enable_ByteTrack = True
     enable_OCSORT = False
 
     start = 0
@@ -47,7 +47,8 @@ if __name__ == "__main__":
             target_tracklets = bot_sort_tracklets
             
         if enable_ByteTrack:
-            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
+            vid2 = Video_utils.Video(urchin_video_folder + "/" + vid_name)
+            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid2, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
             target_tracklets = byte_track_tracklets
             
@@ -56,7 +57,10 @@ if __name__ == "__main__":
             VOD_utils.interpoalte_tracklet_set(oc_sort_tracklets)
             target_tracklets = oc_sort_tracklets      
 
+        bot_sort_tracklets.draw_tracklets()
+        byte_track_tracklets.draw_tracklets()
+        vid = Video_utils.stitch_video(vid, vid2, "BoT_vs_Byte.mp4")
+        vid.play(1200, start_paused=True)
 
-        target_tracklets.video.play(1800, start_paused=True)  
-        
-    print(frame_count)
+
+        #target_tracklets.video.play(1500, start_paused=True) 
