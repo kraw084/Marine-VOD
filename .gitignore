@@ -10,3 +10,4 @@ yolov5s.pt
 yolov5n.pt
 results/*.mp4
 TrackEval_results/
+runs
