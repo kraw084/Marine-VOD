@@ -2,6 +2,8 @@ import os
 import random
 import functools
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 import torch
 import torchvision
 import torchvision.transforms.v2 as v2
@@ -44,7 +46,6 @@ class ReID_dataset(torch.utils.data.Dataset):
     
 
     def __getitem__(self, index):
-        print(index)
         target_global_id = self.global_ids[index]
         anchor_local_id = self.random_local(target_global_id)
         positive_local_id = self.random_local(target_global_id, ignore=anchor_local_id)
@@ -52,9 +53,9 @@ class ReID_dataset(torch.utils.data.Dataset):
         negative_global_id = self.random_global(ignore=target_global_id)
         negative_local_id = self.random_local(negative_global_id)
 
-        anchor_im = torchvision.io.read_image(self.dir + f"/{target_global_id}/{anchor_local_id}.jpg")
-        positive_im = torchvision.io.read_image(self.dir + f"/{target_global_id}/{positive_local_id}.jpg")
-        negative_im = torchvision.io.read_image(self.dir + f"/{negative_global_id}/{negative_local_id}.jpg")
+        anchor_im = torchvision.io.read_image(self.dir + f"/{target_global_id}/{anchor_local_id}.jpg").float() / 255
+        positive_im = torchvision.io.read_image(self.dir + f"/{target_global_id}/{positive_local_id}.jpg").float() / 255
+        negative_im = torchvision.io.read_image(self.dir + f"/{negative_global_id}/{negative_local_id}.jpg").float() / 255
 
         if self.transform:
             anchor_im = self.transform(anchor_im)
@@ -65,7 +66,7 @@ class ReID_dataset(torch.utils.data.Dataset):
     
 
 def load_resnet():
-    return torch.hub.load("pytorch/vision:v0.10.0", "resnet50", num_classes=128, pretrained=False)
+    return torch.hub.load("pytorch/vision:v0.10.0", "resnet50", num_classes=128, weights=None)
 
 
 def save_model(model, path, name):
@@ -91,7 +92,7 @@ def train(model, dataset, epochs, batch_size, lr, weight_decay, save_path, save_
     #create dataloader and optimiser
     loader = torch.utils.data.DataLoader(dataset, batch_size)
     opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    loss_func = torch.nn.TripletMarginLoss()
+    loss_func = torch.nn.TripletMarginWithDistanceLoss(distance_function=cosine_distance)
 
     #create tensorboard writer
     writer = SummaryWriter(f"{save_path}/logs")
@@ -139,6 +140,10 @@ def train(model, dataset, epochs, batch_size, lr, weight_decay, save_path, save_
     print("Training finished!")
 
 
+def cosine_distance(x1, x2):
+    return 1 - torch.nn.functional.cosine_similarity(x1, x2, dim = -1)
+
+
 def get_resized_size(image_size, target_size):
     aspect_ratio = image_size[0] / image_size[1]
     if aspect_ratio > 1:
@@ -177,7 +182,7 @@ def view_dataset(dataset):
 
 
 if __name__ == "__main__":
-    exp_name = "resnet_initial_test"
+    exp_name = "siamese_triplet_resnet_initial_test"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([resize_and_pad,
@@ -201,7 +206,7 @@ if __name__ == "__main__":
     train(model = resnet,
           dataset = dataset,
           epochs = 100,
-          batch_size = 128,
+          batch_size = 64,
           lr = 1e-4,
           weight_decay = 0.0005,
           save_path = f"runs/{exp_name}",
