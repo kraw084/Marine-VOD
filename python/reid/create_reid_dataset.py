@@ -14,13 +14,23 @@ from vod_methods.byte_track import ByteTrack
 urchin_bot = create_urchin_model(Config.cuda)
 video_folder = Config.urchin_vid_path
 
-padding = 0.1
+padding = 0.3
 
-dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset"
+dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2"
 os.mkdir(dataset_folder)
 
+#video_names = os.listdir(video_folder)
+video_names = [
+"DSC_2168.MP4", 
+"DSC_4778.MP4",  
+"DSC_4952.MP4",    
+"DSC_5814.MP4",  
+"DSC_7840.MP4",  
+"DSC_7848.MP4"
+]
+
 global_id = 0
-for name in os.listdir(video_folder):
+for name in video_names:
     vid = Video(video_folder + "/" + name)
 
     tracklets = ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
