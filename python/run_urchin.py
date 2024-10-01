@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
-from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort
+from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort, deep_sort
+from reid.reid import create_reid_model
 
 
 if __name__ == "__main__":
@@ -11,12 +12,15 @@ if __name__ == "__main__":
     urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
     urchin_video_folder = Config.Config.urchin_vid_path
 
+    urchin_reid_model = create_reid_model()
+
     enable_fbf = False
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = True
+    enable_ByteTrack = False
     enable_OCSORT = False
+    enable_DeepSORT = True
 
     start = 0
     count = 0
@@ -47,21 +51,20 @@ if __name__ == "__main__":
             target_tracklets = bot_sort_tracklets
             
         if enable_ByteTrack:
-            #vid2 = Video_utils.Video(urchin_video_folder + "/" + vid_name)
-            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=False, silence=False)
+            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
             target_tracklets = byte_track_tracklets
             
         if enable_OCSORT:
             oc_sort_tracklets = oc_sort.OC_SORT(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(oc_sort_tracklets)
-            target_tracklets = oc_sort_tracklets      
+            target_tracklets = oc_sort_tracklets
 
-        #bot_sort_tracklets.draw_tracklets()
-        #byte_track_tracklets.draw_tracklets()
+        if enable_DeepSORT:
+            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
+                                                      lambda_iou=0.5, reid_model=urchin_reid_model)
+            VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
+            target_tracklets = deep_sort_tracklets
 
-        #vid = Video_utils.stitch_video(vid, vid2, "BoT_vs_Byte.mp4")
-        #vid.play(1200, start_paused=True)
-
-
-        #target_tracklets.video.play(1500, start_paused=True) 
+        target_tracklets.draw_tracklets()
+        target_tracklets.video.play(1200, start_paused=True)

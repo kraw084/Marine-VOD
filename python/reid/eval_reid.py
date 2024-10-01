@@ -95,14 +95,13 @@ def eval(model, dataset, thresh_increments=0.01):
 if __name__ == "__main__":
     #load model
     model = load_resnet()
-    load_model(model, "runs/siamese_triplet_resnet_initial_test", "models/Epoch_99.pt")
+    load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
     model.cuda()
     model.eval()
 
     #load dataset
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
-    dataset = ReID_dataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset", transform=resize_and_pad)
+    dataset = ReID_dataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", transform=resize_and_pad)
 
     #display_scores(dataset)
-
     eval(model, dataset)

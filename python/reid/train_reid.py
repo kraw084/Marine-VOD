@@ -92,7 +92,7 @@ def train(model, dataset, epochs, batch_size, lr, weight_decay, save_path, save_
     #create dataloader and optimiser
     loader = torch.utils.data.DataLoader(dataset, batch_size)
     opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    loss_func = torch.nn.TripletMarginWithDistanceLoss(distance_function=cosine_distance)
+    loss_func = torch.nn.TripletMarginWithDistanceLoss(distance_function=cosine_distance, margin=0.5)
 
     #create tensorboard writer
     writer = SummaryWriter(f"{save_path}/logs")
@@ -152,12 +152,14 @@ def get_resized_size(image_size, target_size):
         new_size = (int(target_size[1] * aspect_ratio), target_size[1])
     return new_size
 
+
 def calculate_padding(resized_size, target_size):
     pad_left = (target_size[1] - resized_size[1]) // 2
     pad_right = target_size[1] - resized_size[1] - pad_left
     pad_top = (target_size[0] - resized_size[0]) // 2
     pad_bottom = target_size[0] - resized_size[0] - pad_top
     return (pad_left, pad_top, pad_right, pad_bottom)
+
 
 def resize_with_aspect_ratio(image, target_size):
     new_size = get_resized_size(image.shape[1:], target_size)
@@ -182,7 +184,7 @@ def view_dataset(dataset):
 
 
 if __name__ == "__main__":
-    exp_name = "siamese_triplet_resnet_initial_test"
+    exp_name = "siamese_triplet_resnet_lowMargin"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([resize_and_pad,
@@ -193,7 +195,9 @@ if __name__ == "__main__":
                             v2.RandomAffine(degrees=5, translate=(0.1, 0.1), scale=(0.9, 1.1))])
 
 
-    dataset = ReID_dataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset", transform)
+    dataset = ReID_dataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", transform)
+    print(f"Dataset size: {len(dataset)}")
+
     resnet = load_resnet()
     resnet.cuda()
 
@@ -208,9 +212,9 @@ if __name__ == "__main__":
           epochs = 100,
           batch_size = 64,
           lr = 1e-4,
-          weight_decay = 0.0005,
+          weight_decay = 5e-4,
           save_path = f"runs/{exp_name}",
-          save_freq = 1,
+          save_freq = 5,
           device = "cuda",
           resume = None)
    
