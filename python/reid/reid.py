@@ -1,7 +1,29 @@
+import os
 
 import torch
+import torchvision
+import numpy as np
+from tqdm import tqdm
 
-from .train_reid import load_model, load_resnet, resize_with_aspect_ratio
+from reid_data_utils import resize_with_aspect_ratio
+
+
+def load_resnet():
+    return torch.hub.load("pytorch/vision:v0.10.0", "resnet50", num_classes=128, weights=None)
+
+
+def save_model(model, path, name):
+    """Save model weights to path/name"""
+    torch.save(model.state_dict(), f"{path}/{name}")
+
+
+def load_model(model, path, name):
+    """Load model weights from path/name"""
+    model.load_state_dict(torch.load(f"{path}/{name}", weights_only=True))
+
+
+def cosine_distance(x1, x2):
+    return 1 - torch.nn.functional.cosine_similarity(x1, x2, dim = -1)
 
 
 class ReIDModel:
@@ -47,3 +69,22 @@ def create_reid_model():
     load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
     return ReIDModel(model, (224, 224), 0.3)
     
+
+def plot_embeddings(reid_model, dataset, tb, step, embedding_size=128):
+    """Plot embeddings in tensorboard"""
+    embeddings = np.zeros((0, embedding_size))
+    labels = np.zeros((0, 1))
+
+    for global_id in tqdm(dataset.global_ids, desc ="Calculating embeddings", bar_format = "{l_bar}{bar:20}{r_bar}"):
+        local_ids = os.listdir(dataset.dir + f"/{global_id}")
+        images = np.zeros((len(local_ids), 3, *(reid_model.size)))
+
+        for i, local_id in enumerate(local_ids):
+            image = torchvision.io.read_image(dataset.dir + f"/{global_id}/{local_id}").float() / 255
+            images[i] = resize_with_aspect_ratio(image, reid_model.size)
+
+        local_embeddings = reid_model.extract_feature(images, is_batch=True, numpy=True)
+        embeddings = np.concatenate((embeddings, local_embeddings), axis=0)
+        labels = np.concatenate((labels, np.ones((len(local_ids), 1)) * global_id), axis=0)
+
+    tb.add_embedding(embeddings, metadata=labels, global_step=step, tag="Feature Embedding")

@@ -87,14 +87,8 @@ class DeepSORT_Tracker(SORT_Tracker):
         if num_tracklets and num_detections:
             #determine tracklet pred and detection matching
             iou_mat = iou_matrix(tracklet_preds, detections)
-            app_mat = self.appearance_sim_mat(tracklet_preds, detections)
-            
+            app_mat = self.appearance_sim_mat(tracklet_preds, detections)            
             cost_mat = self.lambda_iou * iou_mat + (1 - self.lambda_iou) * app_mat
-
-            print("\n")
-            print(iou_mat)
-            print("\n")
-            print(app_mat)
             
             tracklet_indices, detection_indices = linear_sum_assignment(cost_mat, True)
             tracklet_indices, detection_indices = list(tracklet_indices), list(detection_indices)
