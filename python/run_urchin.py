@@ -1,10 +1,13 @@
 import os
+
+import matplotlib.pyplot as plt
+import matplotlib
 import cv2
 import numpy as np
 
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort, deep_sort
-from reid.reid import create_reid_model
+from reid.reid import create_reid_model, random_view_similarity
 
 
 if __name__ == "__main__":
@@ -20,7 +23,7 @@ if __name__ == "__main__":
     enable_BoTSORT = False
     enable_ByteTrack = False
     enable_OCSORT = False
-    enable_DeepSORT = True
+    enable_DeepSORT = False
 
     start = 0
     count = 0
@@ -33,6 +36,8 @@ if __name__ == "__main__":
         
         vid = Video_utils.Video(urchin_video_folder + "/" + vid_name)
 
+        random_view_similarity(vid, urchin_bot, urchin_reid_model)
+        
         if enable_fbf:
             fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid, True) 
             target_tracklets = fbf_tracklets
@@ -42,7 +47,10 @@ if __name__ == "__main__":
             target_tracklets = seqNMS_tracklets
 
         if enable_SORT:
-            sort_tracklets = sort.SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            #sort_tracklets = sort.SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            vid1 = Video_utils.Video(urchin_video_folder + "/" + vid_name)
+            sort_tracklets = sort.SORT(urchin_bot, vid1, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
+            VOD_utils.interpoalte_tracklet_set(sort_tracklets)
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
@@ -61,10 +69,15 @@ if __name__ == "__main__":
             target_tracklets = oc_sort_tracklets
 
         if enable_DeepSORT:
-            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
-                                                      lambda_iou=0.5, reid_model=urchin_reid_model)
+            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
+                                                      lambda_iou=0.2, reid_model=urchin_reid_model, sim_min=0.7)
             VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
             target_tracklets = deep_sort_tracklets
 
-        target_tracklets.draw_tracklets()
-        target_tracklets.video.play(1200, start_paused=True)
+        #target_tracklets.draw_tracklets()
+        #target_tracklets.video.play(1500, start_paused=True)
+
+        #sort_tracklets.draw_tracklets()
+        #deep_sort_tracklets.draw_tracklets()
+        #stitched_video = Video_utils.stitch_video(sort_tracklets.video, deep_sort_tracklets.video, "sort_vs_deep_sort.mp4")
+        #stitched_video.play(1500, start_paused = True)

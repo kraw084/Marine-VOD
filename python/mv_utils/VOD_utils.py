@@ -236,10 +236,12 @@ def tracklet_off_screen(frame_shape, tracklet):
     if len(tracklet.boxes) == 0: return False
     
     last_box = tracklet.boxes[-1]
+    return box_off_screen(frame_shape, last_box)
+
+
+def box_off_screen(frame_shape, box):
     h, w, _ = frame_shape
-    
-    top_left_x, top_left_y, bottom_right_x, bottom_right_y = xywhTOxyxy(*last_box[:4])
-    
+    top_left_x, top_left_y, bottom_right_x, bottom_right_y = xywhTOxyxy(*box[:4])
     return top_left_x > w or bottom_right_x < 0 or top_left_y > h or bottom_right_y < 0
     
 
