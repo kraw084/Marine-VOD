@@ -1,8 +1,6 @@
 import os
 import random
-import functools
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import math
 
 import torch
 import torchvision
@@ -100,3 +98,15 @@ def view_dataset(dataset):
         axes[2].imshow(neg.permute(1, 2, 0))
         plt.show()
 
+
+def extract_bbox_image(box, image, padding=0.3):
+    """Takes a box [x, y, w, h] and extracts the image"""
+    x_center, y_center, w, h = box[0], box[1], box[2], box[3]
+    w = math.ceil(w * (1 + padding))
+    h = math.ceil(h * (1 + padding))
+
+    top, bottom = max(0, int(y_center - h / 2)), min(image.shape[0], int(y_center + h / 2))
+    left, right = max(0, int(x_center - w / 2)), min(image.shape[1], int(x_center + w / 2))
+
+    extracted_img = image[top:bottom, left:right]
+    return extracted_img
