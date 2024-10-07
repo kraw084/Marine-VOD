@@ -12,8 +12,12 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib
 
-from reid import ReIDModel, create_reid_model
-from reid_data_utils import extract_bbox_image, ReID_dataset, resize_with_aspect_ratio
+try:
+    from reid import create_reid_model
+    from reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset
+except:
+    from reid.reid import create_reid_model
+    from reid.reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset
 
 
 def display_scores(reid_model, dataset):
@@ -176,6 +180,10 @@ def random_view_similarity(video, detector, reid_model):
 if __name__ == "__main__":
     #load model
     model = create_reid_model()
-    dataset = ReID_dataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", transform=resize_with_aspect_ratio)
+    resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
+    dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
+                                       min_track_length=50, 
+                                       transform=resize_and_pad)
 
-    
+    #display_scores(model, dataset)
+    pr_curve(model, dataset)

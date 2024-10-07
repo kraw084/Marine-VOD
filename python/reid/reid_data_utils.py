@@ -6,9 +6,10 @@ import torch
 import torchvision
 import torchvision.transforms.v2 as v2
 import matplotlib.pyplot as plt
+import numpy as np
 
-class ReID_dataset(torch.utils.data.Dataset):
-    def __init__(self, dir, transform=None):
+class ReIDRandomTripletDataset(torch.utils.data.Dataset):
+    def __init__(self, dir, min_track_length=15, transform=None):
         self.dir = dir
         self.transform = transform
 
@@ -18,7 +19,7 @@ class ReID_dataset(torch.utils.data.Dataset):
 
         for i in range(len(self.global_ids) - 1, -1, -1):
             items = os.listdir(self.dir + f"/{self.global_ids[i]}")
-            if len(items) <= 15: 
+            if len(items) <= min_track_length: 
                 self.global_ids.pop(i)
 
 
@@ -40,6 +41,13 @@ class ReID_dataset(torch.utils.data.Dataset):
         return len(self.global_ids)
     
 
+    def num_of_images(self):
+        total_size = 0
+        for id in self.global_ids:
+            total_size += len(os.listdir(self.dir + f"/{id}"))
+        return total_size
+    
+
     def __getitem__(self, index):
         target_global_id = self.global_ids[index]
         anchor_local_id = self.random_local(target_global_id)
@@ -59,6 +67,45 @@ class ReID_dataset(torch.utils.data.Dataset):
 
         return anchor_im, positive_im, negative_im
     
+
+class ReIDMiningDataset(ReIDRandomTripletDataset):
+    def __init__(self, dir, items_per_id=40, min_track_length=40, transform=None):
+        self.dir = dir
+        self.transform = transform
+
+        self.global_ids = os.listdir(self.dir)
+        self.global_ids = [int(i) for i in self.global_ids]
+        self.global_ids.sort()
+
+        self.items_per_id = items_per_id
+        assert self.items_per_id <= min_track_length, "items_per_id must be less than min_track_length"
+
+        for i in range(len(self.global_ids) - 1, -1, -1):
+            items = os.listdir(self.dir + f"/{self.global_ids[i]}")
+            if len(items) <= min_track_length: 
+                self.global_ids.pop(i)
+
+        self.local_lengths = {}
+        for global_id in self.global_ids:
+            self.local_lengths[global_id] = len(os.listdir(self.dir + f"/{global_id}"))
+
+
+    def load_and_transform(self, global_id, local_id):
+        image = torchvision.io.read_image(self.dir + f"/{global_id}/{local_id}.jpg").float() / 255
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image
+
+    def __getitem__(self, index):
+        target_global_id = self.global_ids[index]
+        anchor_local_ids = np.array([int(i.strip(".jpg")) for i in os.listdir(self.dir + f"/{target_global_id}")])
+        sample = np.random.choice(anchor_local_ids, self.items_per_id, replace=False)
+
+        images = torch.stack([self.load_and_transform(target_global_id, i) for i in sample])
+        return images, torch.tensor([target_global_id] * self.items_per_id)
+
 
 def get_resized_size(image_size, target_size):
     aspect_ratio = image_size[0] / image_size[1]
@@ -82,7 +129,7 @@ def resize_with_aspect_ratio(image, target_size):
     resize = v2.Resize(new_size)
 
     padding = calculate_padding(new_size, target_size)
-    pad = v2.Pad(padding)
+    pad = v2.Pad(padding, fill=0.5)
 
     return pad(resize(image))
 
@@ -110,3 +157,14 @@ def extract_bbox_image(box, image, padding=0.3):
 
     extracted_img = image[top:bottom, left:right]
     return extracted_img
+
+
+def track_length_histogram(dataset):
+    lengths = []
+    for i in dataset.global_ids:
+        lengths.append(len(os.listdir(dataset.dir + f"/{i}")))
+    plt.hist(lengths, bins=100)
+    plt.title("Track Length Histogram")
+    plt.xlabel("Track Length")
+    plt.ylabel("Count")
+    plt.show()

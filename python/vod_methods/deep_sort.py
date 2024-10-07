@@ -1,11 +1,8 @@
-import math
-
 import torch
-import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from reid.reid import extract_bbox_image
 from mv_utils.VOD_utils import silence, iou_matrix, box_off_screen
+from reid.reid_data_utils import extract_bbox_image
 from .sort import SORT_Tracker
 
 

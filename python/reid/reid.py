@@ -1,6 +1,9 @@
 import torch
 
-from reid.reid_data_utils import resize_with_aspect_ratio
+try:
+    from reid.reid_data_utils import resize_with_aspect_ratio
+except ModuleNotFoundError:
+    from reid_data_utils import resize_with_aspect_ratio
 
 
 def load_resnet():
@@ -61,5 +64,6 @@ class ReIDModel:
 
 def create_reid_model():
     model = load_resnet()
-    load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
+    #load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
+    load_model(model, "runs/all_triplets", "models/Epoch_99.pt")
     return ReIDModel(model, (224, 224), 0.3)

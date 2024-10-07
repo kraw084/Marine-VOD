@@ -7,7 +7,8 @@ import numpy as np
 
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort, deep_sort
-from reid.reid import create_reid_model, random_view_similarity
+from reid.reid import create_reid_model
+from reid.eval_reid import random_view_similarity
 
 
 if __name__ == "__main__":
@@ -35,7 +36,6 @@ if __name__ == "__main__":
         count += 1
         
         vid = Video_utils.Video(urchin_video_folder + "/" + vid_name)
-
         random_view_similarity(vid, urchin_bot, urchin_reid_model)
         
         if enable_fbf:

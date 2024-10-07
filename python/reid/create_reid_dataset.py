@@ -16,8 +16,8 @@ video_folder = Config.urchin_vid_path
 
 padding = 0.3
 
-dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2"
-os.mkdir(dataset_folder)
+dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val"
+#os.mkdir(dataset_folder)
 
 #video_names = os.listdir(video_folder)
 video_names = [
@@ -27,6 +27,15 @@ video_names = [
 "DSC_5814.MP4",  
 "DSC_7840.MP4",  
 "DSC_7848.MP4"
+]
+
+video_names = [
+"DSC_1788.MP4",
+"DSC_1876.MP4",
+"DSC_2557.MP4",
+"DSC_4780.MP4",
+"DSC_5639.MP4",
+"DSC_7915.MP4"
 ]
 
 global_id = 0
