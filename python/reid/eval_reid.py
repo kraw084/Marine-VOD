@@ -14,10 +14,10 @@ import matplotlib
 
 try:
     from reid import create_reid_model
-    from reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset
+    from reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset
 except:
     from reid.reid import create_reid_model
-    from reid.reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset
+    from reid.reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset
 
 
 def display_scores(reid_model, dataset):
@@ -177,13 +177,59 @@ def random_view_similarity(video, detector, reid_model):
         view_similarity(target_box, frame, reid_model)
 
 
+def query_gallery(reid_model, dataset, k, show_plots=True):
+    hits = 0
+
+    if not show_plots:
+        iterator = tqdm(range(len(dataset)), total=len(dataset), bar_format="{l_bar}{bar:20}{r_bar}")
+    else:
+        iterator = range(len(dataset))
+
+    for i in iterator:
+        images, ids = dataset[i]
+        embeddings = reid_model.extract_feature(images, is_batch=True)
+        query_vec = embeddings[0]
+        scores = np.array([reid_model.vector_similarity(query_vec, emb) for emb in embeddings[1:]])
+        ranking = np.argsort(scores)[::-1]
+
+        if show_plots:
+            fig, axes = plt.subplots(1, images.shape[0], figsize=(16, 4))
+
+            axes[0].imshow(images[0].permute(1, 2, 0))
+            axes[0].axis("off")
+            axes[0].set_title("Query")
+
+            for i, im_index in enumerate(ranking):
+                label = "P" if im_index == 0 else "N"
+                id = ids[im_index + 1]
+                axes[i+1].imshow(images[im_index + 1].permute(1, 2, 0))
+                axes[i+1].axis("off")
+                axes[i+1].set_title(f"{label}({id}) - {scores[im_index]:.3f}")
+
+            plt.tight_layout()
+            plt.show()
+
+        if 0 in ranking[:k]: hits += 1
+
+    print(f"Top {k} accuracy: {hits / len(dataset):.3f}")     
+    
+
+
 if __name__ == "__main__":
     #load model
     model = create_reid_model()
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
-    dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
-                                       min_track_length=50, 
-                                       transform=resize_and_pad)
+
+    #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
+    #                                   min_track_length=50, 
+    #                                   transform=resize_and_pad)
+
+    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val",
+                                  min_track_length=50, 
+                                  num_negatives=9,
+                                  transform=resize_and_pad)
 
     #display_scores(model, dataset)
-    pr_curve(model, dataset)
+    #pr_curve(model, dataset)
+
+    query_gallery(model, dataset, 1, show_plots=False)

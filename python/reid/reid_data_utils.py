@@ -8,13 +8,14 @@ import torchvision.transforms.v2 as v2
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class ReIDRandomTripletDataset(torch.utils.data.Dataset):
     def __init__(self, dir, min_track_length=15, transform=None):
         self.dir = dir
         self.transform = transform
 
         self.global_ids = os.listdir(self.dir)
-        self.global_ids = [int(i) for i in self.global_ids]
+        self.global_ids = [int(i) for i in self.global_ids if i.isnumeric()]
         self.global_ids.sort()
 
         for i in range(len(self.global_ids) - 1, -1, -1):
@@ -68,13 +69,46 @@ class ReIDRandomTripletDataset(torch.utils.data.Dataset):
         return anchor_im, positive_im, negative_im
     
 
+class QueryGalleryDataset(ReIDRandomTripletDataset):
+    def __init__(self, dir, min_track_length=15, num_negatives=9, transform=None):
+        super().__init__(dir, min_track_length, transform)
+        self.num_negatives = num_negatives
+
+
+    def __getitem__(self, index):
+        target_global_id = self.global_ids[index]
+        anchor_local_id = self.random_local(target_global_id)
+        positive_local_id = self.random_local(target_global_id, ignore=anchor_local_id)
+        
+        negatives = []
+        for i in range(self.num_negatives):
+            negative_global_id = self.random_global(ignore=target_global_id)
+            negative_local_id = self.random_local(negative_global_id)
+            negatives.append((negative_global_id, negative_local_id))
+
+        query = torchvision.io.read_image(self.dir + f"/{target_global_id}/{anchor_local_id}.jpg").float() / 255
+        positive = torchvision.io.read_image(self.dir + f"/{target_global_id}/{positive_local_id}.jpg").float() / 255
+
+        if self.transform:
+            query = self.transform(query)
+            positive = self.transform(positive)
+
+        images = torch.concatenate((query.unsqueeze(0), positive.unsqueeze(0)))
+        for i in range(self.num_negatives):
+            negative = torchvision.io.read_image(self.dir + f"/{negatives[i][0]}/{negatives[i][1]}.jpg").float() / 255
+            if self.transform: negative = self.transform(negative)
+            images = torch.concatenate((images, negative.unsqueeze(0)))
+
+        return images, [target_global_id, target_global_id, *[i[0] for i in negatives]]
+
+
 class ReIDMiningDataset(ReIDRandomTripletDataset):
     def __init__(self, dir, items_per_id=40, min_track_length=40, transform=None):
         self.dir = dir
         self.transform = transform
 
         self.global_ids = os.listdir(self.dir)
-        self.global_ids = [int(i) for i in self.global_ids]
+        self.global_ids = [int(i) for i in self.global_ids if i.isnumeric()]
         self.global_ids.sort()
 
         self.items_per_id = items_per_id

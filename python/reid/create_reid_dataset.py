@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -16,8 +17,8 @@ video_folder = Config.urchin_vid_path
 
 padding = 0.3
 
-dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val"
-#os.mkdir(dataset_folder)
+dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2"
+os.mkdir(dataset_folder)
 
 #video_names = os.listdir(video_folder)
 video_names = [
@@ -38,8 +39,13 @@ video_names = [
 "DSC_7915.MP4"
 ]
 
+data = []
+
 global_id = 0
 for name in video_names:
+    video_data = {"video_name": name} 
+    ids = []
+
     vid = Video(video_folder + "/" + name)
 
     tracklets = ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
@@ -60,3 +66,11 @@ for name in video_names:
             local_id += 1
 
         global_id += 1
+        ids.append(global_id)
+
+    video_data["count"] = len(ids)
+    video_data["ids"] = ids
+    data.append(video_data)
+
+with open(dataset_folder + "/reid_data.json", "w") as f:
+    json.dump(data, f)
