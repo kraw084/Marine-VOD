@@ -134,6 +134,15 @@ class ReIDTrainerBatchAllMining(ReIDTrainer):
 
         progress_bar.set_postfix({"loss": batch_loss})
 
+        dist_mat = 1 - torch.matmul(embeddings, embeddings.T)
+        avg_anc_pos_dist = (dist_mat[anchor_indicies, positive_indicies]).mean()
+        avg_anc_neg_dist = (dist_mat[anchor_indicies, negative_indicies]).mean()
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Pos_Dist', avg_anc_pos_dist, e_i * len(self.loader) + progress_bar.n)
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Neg_Dist', avg_anc_neg_dist, e_i * len(self.loader) + progress_bar.n)
+
+        num_of_triplets = len(anchor_indicies)
+        self.writer.add_scalar('TripletSelection/Num_of_Triplets', num_of_triplets, e_i * len(self.loader) + progress_bar.n)
+
         #add batch loss to tensorboard
         self.writer.add_scalar('Loss/Batch_Loss', batch_loss, e_i * len(self.loader) + progress_bar.n)
 
@@ -200,6 +209,7 @@ def random_index_per_row(t):
     first_occurence = torch.argmax(ranked_occurences, dim=1)
 
     return cols[first_occurence].cpu().numpy()
+
 
 class ReIDTrainerBatchSemiHardMining(ReIDTrainer):
     def process_batch(self, e_i, batch_args, progress_bar):
@@ -273,7 +283,7 @@ class AblumentationsWrapper():
 
 
 if __name__ == "__main__":
-    exp_name = "resnet_m05_batchSemiHard_pickRandom"
+    exp_name = "resnet_m05_randomTriplets_true"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([v2.GaussianBlur((3, 3), (0.01, 2.0)),
@@ -289,8 +299,8 @@ if __name__ == "__main__":
                             ])
 
 
-    dataset = ReIDMiningDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", 
-                                items_per_id=10, 
+    dataset = ReIDRandomTripletDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", 
+                                #items_per_id=10, 
                                 min_track_length=50, 
                                 transform=transform)
     
@@ -303,14 +313,14 @@ if __name__ == "__main__":
         os.mkdir(f"runs/{exp_name}")
 
     #create model
-    resnet = load_resnet()
+    resnet = load_resnet(use_head=True)
     resnet.cuda()
 
     #train model
-    trainer = ReIDTrainerBatchSemiHardMining(model = resnet,
+    trainer = ReIDTrainer(model = resnet,
                           dataset = dataset,
                           epochs = 100,
-                          batch_size = 16,
+                          batch_size = 32,
                           lr = 1e-4,
                           weight_decay = 5e-4,
                           margin = 0.5,

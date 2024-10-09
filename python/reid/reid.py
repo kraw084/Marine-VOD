@@ -5,9 +5,15 @@ try:
 except ModuleNotFoundError:
     from reid_data_utils import resize_with_aspect_ratio
 
+from torchvision.models.resnet import resnet50
 
-def load_resnet():
-    return torch.hub.load("pytorch/vision:v0.10.0", "resnet50", num_classes=128, weights=None)
+def load_resnet(use_head=True):
+    model = torch.hub.load("pytorch/vision:v0.10.0", "resnet50", num_classes=128, weights=None)
+
+    if not use_head:
+        model.fc = torch.nn.Identity()
+
+    return model
 
 
 def save_model(model, path, name):
@@ -62,10 +68,7 @@ class ReIDModel:
             return cosine_sim_matrix
     
 
-def create_reid_model():
+def create_reid_model(name="resnet_m05_batchSemiHard", epoch=99):
     model = load_resnet()
-    #load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
-    load_model(model, "runs/resnet_m05_batchAll", "models/Epoch_99.pt")
-    #load_model(model, "runs/resnet_m05_batchHard", "models/Epoch_0.pt")
-    #load_model(model, "runs/resnet_m05_batchSemiHard", "models/Epoch_99.pt")
+    load_model(model, f"runs/{name}", f"models/Epoch_{epoch}.pt")
     return ReIDModel(model, (224, 224), 0.3)
