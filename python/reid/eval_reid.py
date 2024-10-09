@@ -177,7 +177,7 @@ def random_view_similarity(video, detector, reid_model):
         view_similarity(target_box, frame, reid_model)
 
 
-def query_gallery(reid_model, dataset, k, show_plots=True):
+def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
     hits = 0
 
     if not show_plots:
@@ -192,7 +192,10 @@ def query_gallery(reid_model, dataset, k, show_plots=True):
         scores = np.array([reid_model.vector_similarity(query_vec, emb) for emb in embeddings[1:]])
         ranking = np.argsort(scores)[::-1]
 
-        if show_plots:
+        in_topk = 0 in ranking[:k]
+        if in_topk: hits += 1
+
+        if show_plots or (show_wrong and not in_topk):
             fig, axes = plt.subplots(1, images.shape[0], figsize=(16, 4))
 
             axes[0].imshow(images[0].permute(1, 2, 0))
@@ -209,7 +212,7 @@ def query_gallery(reid_model, dataset, k, show_plots=True):
             plt.tight_layout()
             plt.show()
 
-        if 0 in ranking[:k]: hits += 1
+        
 
     print(f"Top {k} accuracy: {hits / len(dataset):.3f}")     
     
@@ -224,12 +227,13 @@ if __name__ == "__main__":
     #                                   min_track_length=50, 
     #                                   transform=resize_and_pad)
 
-    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val",
+    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
                                   min_track_length=50, 
                                   num_negatives=9,
-                                  transform=resize_and_pad)
+                                  transform=resize_and_pad,
+                                  same_video=True)
 
     #display_scores(model, dataset)
     #pr_curve(model, dataset)
 
-    query_gallery(model, dataset, 1, show_plots=False)
+    query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)

@@ -65,5 +65,7 @@ class ReIDModel:
 def create_reid_model():
     model = load_resnet()
     #load_model(model, "runs/siamese_triplet_resnet_lowMargin", "models/Epoch_99.pt")
-    load_model(model, "runs/all_triplets", "models/Epoch_99.pt")
+    load_model(model, "runs/resnet_m05_batchAll", "models/Epoch_99.pt")
+    #load_model(model, "runs/resnet_m05_batchHard", "models/Epoch_0.pt")
+    #load_model(model, "runs/resnet_m05_batchSemiHard", "models/Epoch_99.pt")
     return ReIDModel(model, (224, 224), 0.3)

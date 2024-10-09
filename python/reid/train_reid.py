@@ -140,7 +140,6 @@ class ReIDTrainerBatchAllMining(ReIDTrainer):
         return batch_loss
 
 
-
 class ReIDTrainerBatchHardMining(ReIDTrainer):
     def process_batch(self, e_i, batch_args, progress_bar):
         images, labels = batch_args
@@ -151,44 +150,92 @@ class ReIDTrainerBatchHardMining(ReIDTrainer):
         embeddings = embeddings / embeddings.norm(dim=-1, keepdim=True)
 
         dist_mat = 1 - torch.matmul(embeddings, embeddings.T)
-
-        #triplets = []
-        #for i in range(dist_mat.shape[0]):
-        #    row = dist_mat[i].detach().cpu().numpy()
-        #    positive_candidate_incides = np.where(labels == labels[i])[0] 
-        #    negative_candidate_incides = np.where(labels != labels[i])[0]
-
-        #    hardest_positive = positive_candidate_incides[np.argmax(row[positive_candidate_incides])]
-        #    hardest_negative = negative_candidate_incides[np.argmin(row[negative_candidate_incides])]
-
-        #    triplets.append((i, hardest_positive, hardest_negative))
-
-        #anchor_indicies, positive_indicies, negative_indicies = zip(*triplets)
-        
+  
         positive_mask = labels.unsqueeze(0) == labels.unsqueeze(1)
         pos_dist_mat = dist_mat * positive_mask.float() - ((~positive_mask).float() * 1e6)
         neg_dist_mat = dist_mat * (~positive_mask).float() + (positive_mask.float() * 1e6)
         
         anchor_indicies = torch.arange(dist_mat.shape[0])
         positive_indicies = torch.argmax(pos_dist_mat, dim=1)
+        negative_indicies = torch.argmin(neg_dist_mat, dim=1)
+
+        anchor_embeddings = embeddings[anchor_indicies]
+        positive_embeddings = embeddings[positive_indicies]
+        negative_embeddings = embeddings[negative_indicies]
+
+        avg_anc_pos_dist = (dist_mat[anchor_indicies, positive_indicies]).mean()
+        avg_anc_neg_dist = (dist_mat[anchor_indicies, negative_indicies]).mean()
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Pos_Dist', avg_anc_pos_dist, e_i * len(self.loader) + progress_bar.n)
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Neg_Dist', avg_anc_neg_dist, e_i * len(self.loader) + progress_bar.n)
+
+        loss = self.loss_func(anchor_embeddings, positive_embeddings, negative_embeddings)
+
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
+
+        batch_loss = loss.item()
+
+        progress_bar.set_postfix({"loss": batch_loss})
+
+        #add batch loss to tensorboard
+        self.writer.add_scalar('Loss/Batch_Loss', batch_loss, e_i * len(self.loader) + progress_bar.n)
+
+        return batch_loss
+
+
+def random_index_per_row(t):
+    #find all true values
+    rows, cols = torch.nonzero(t, as_tuple=True)
+
+    #shuffle values
+    random_order = torch.randperm(rows.shape[0])
+    rows = rows[random_order]
+    cols = cols[random_order]
+
+    #find first occurence of each shuffled item
+    row_uniq_vals, row_inv_indicies = torch.unique(rows, return_inverse=True)
+    occurences = row_inv_indicies.unsqueeze(0) == torch.arange(row_uniq_vals.shape[0]).unsqueeze(1).to(t.device)
+    ranked_occurences = occurences * torch.arange(occurences.shape[1], 0, -1).unsqueeze(0).to(t.device)
+    first_occurence = torch.argmax(ranked_occurences, dim=1)
+
+    return cols[first_occurence].cpu().numpy()
+
+class ReIDTrainerBatchSemiHardMining(ReIDTrainer):
+    def process_batch(self, e_i, batch_args, progress_bar):
+        images, labels = batch_args
+        images = images.reshape(-1, *images.shape[2:]).to(self.device)
+        labels = labels.reshape(-1).to(self.device)
+
+        embeddings = self.model(images)
+        embeddings = embeddings / embeddings.norm(dim=-1, keepdim=True)
+
+        dist_mat = 1 - torch.matmul(embeddings, embeddings.T)
+  
+        positive_mask = labels.unsqueeze(0) == labels.unsqueeze(1)
+        pos_dist_mat = dist_mat * positive_mask.float() - ((~positive_mask).float() * 1e6)
+    
+        anchor_indicies = torch.arange(dist_mat.shape[0])
+        #positive_indicies = torch.argmax(pos_dist_mat, dim=1)
+        positive_indicies = random_index_per_row(positive_mask)
 
         # pos + m > neg > pos
         semihard_neg_mask = (~positive_mask) & (dist_mat > dist_mat[:, positive_indicies]) & (dist_mat < dist_mat[:, positive_indicies] + self.margin)
-        
-        rows, cols = torch.nonzero(semihard_neg_mask, as_tuple=True)
-
         no_semihard = torch.any(semihard_neg_mask, dim=1)
         assert torch.all(no_semihard), "items with no semihards found"
 
-        random_order = torch.randperm(rows.shape[0])
-        rows = rows[random_order]
-        cols = cols[random_order]
-        unique_val, row_indicies = torch.unique(rows, return_inverse=True)
-        col_indices = cols[row_indicies]
-        #FIX
-        
-        negative_indicies = col_indices
-        #negative_indicies = torch.argmin(neg_dist_mat, dim=1)
+        #triplets = []
+        #for i in range(semihard_neg_mask.shape[0]):
+        #    if semihard_neg_mask[i].any():
+        #        negative_candidates = torch.where(semihard_neg_mask[i])[0]
+        #        triplets += [(i, positive_indicies[i].item(), n_i.item()) for n_i in negative_candidates]
+
+        #anchor_indicies, positive_indicies, negative_indicies = zip(*triplets)
+
+        negative_indicies = random_index_per_row(semihard_neg_mask)
+
+        num_of_triplets = len(anchor_indicies)
+        self.writer.add_scalar('TripletSelection/Num_of_Triplets', num_of_triplets, e_i * len(self.loader) + progress_bar.n)
 
         anchor_embeddings = embeddings[anchor_indicies]
         positive_embeddings = embeddings[positive_indicies]
@@ -226,7 +273,7 @@ class AblumentationsWrapper():
 
 
 if __name__ == "__main__":
-    exp_name = "resnet_m05_batchSemiHard"
+    exp_name = "resnet_m05_batchSemiHard_pickRandom"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([v2.GaussianBlur((3, 3), (0.01, 2.0)),
@@ -247,7 +294,6 @@ if __name__ == "__main__":
                                 min_track_length=50, 
                                 transform=transform)
     
-    #view_dataset(dataset)
 
     print(f"Dataset size: {len(dataset)}")
     print(f"Number of images: {dataset.num_of_images()}")
@@ -261,7 +307,7 @@ if __name__ == "__main__":
     resnet.cuda()
 
     #train model
-    trainer = ReIDTrainerBatchHardMining(model = resnet,
+    trainer = ReIDTrainerBatchSemiHardMining(model = resnet,
                           dataset = dataset,
                           epochs = 100,
                           batch_size = 16,
@@ -269,7 +315,7 @@ if __name__ == "__main__":
                           weight_decay = 5e-4,
                           margin = 0.5,
                           save_path = f"runs/{exp_name}",
-                          save_freq = 10,
+                          save_freq = 1,
                           device = "cuda",
                           resume = None)
     

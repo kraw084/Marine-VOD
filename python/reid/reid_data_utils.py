@@ -1,6 +1,7 @@
 import os
 import random
 import math
+import json
 
 import torch
 import torchvision
@@ -10,7 +11,7 @@ import numpy as np
 
 
 class ReIDRandomTripletDataset(torch.utils.data.Dataset):
-    def __init__(self, dir, min_track_length=15, transform=None):
+    def __init__(self, dir, min_track_length=15, transform=None, same_video=False):
         self.dir = dir
         self.transform = transform
 
@@ -23,10 +24,21 @@ class ReIDRandomTripletDataset(torch.utils.data.Dataset):
             if len(items) <= min_track_length: 
                 self.global_ids.pop(i)
 
+        if same_video:
+            with open(dir + "/video_data.json") as f:
+                self.video_data = json.load(f)
+
+            self.video_ids = [v["ids"] for v in self.video_data]
+        else:
+            self.video_ids = None
+
 
     def random_global(self, ignore=None):
         if ignore:
             items = [i for i in self.global_ids if i != ignore]
+            if self.video_ids:
+                target_item_id = [i for i in range(len(self.video_ids)) if ignore in self.video_ids[i]][0]
+                items = [i for i in self.video_ids[target_item_id] if i != ignore and i in self.global_ids]
         else: 
             items = self.global_ids
         return random.choice(items)
@@ -70,10 +82,9 @@ class ReIDRandomTripletDataset(torch.utils.data.Dataset):
     
 
 class QueryGalleryDataset(ReIDRandomTripletDataset):
-    def __init__(self, dir, min_track_length=15, num_negatives=9, transform=None):
-        super().__init__(dir, min_track_length, transform)
+    def __init__(self, dir, min_track_length=15, num_negatives=9, transform=None, same_video=True):
+        super().__init__(dir, min_track_length, transform, same_video)
         self.num_negatives = num_negatives
-
 
     def __getitem__(self, index):
         target_global_id = self.global_ids[index]
@@ -104,26 +115,11 @@ class QueryGalleryDataset(ReIDRandomTripletDataset):
 
 class ReIDMiningDataset(ReIDRandomTripletDataset):
     def __init__(self, dir, items_per_id=40, min_track_length=40, transform=None):
-        self.dir = dir
-        self.transform = transform
-
-        self.global_ids = os.listdir(self.dir)
-        self.global_ids = [int(i) for i in self.global_ids if i.isnumeric()]
-        self.global_ids.sort()
-
+        super().__init__(dir, min_track_length, transform)
         self.items_per_id = items_per_id
         assert self.items_per_id <= min_track_length, "items_per_id must be less than min_track_length"
 
-        for i in range(len(self.global_ids) - 1, -1, -1):
-            items = os.listdir(self.dir + f"/{self.global_ids[i]}")
-            if len(items) <= min_track_length: 
-                self.global_ids.pop(i)
-
-        self.local_lengths = {}
-        for global_id in self.global_ids:
-            self.local_lengths[global_id] = len(os.listdir(self.dir + f"/{global_id}"))
-
-
+   
     def load_and_transform(self, global_id, local_id):
         image = torchvision.io.read_image(self.dir + f"/{global_id}/{local_id}.jpg").float() / 255
 

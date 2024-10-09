@@ -65,12 +65,12 @@ for name in video_names:
             cv2.imwrite(dataset_folder + "/" + str(global_id) + "/" + str(local_id) + ".jpg", urchin_image)
             local_id += 1
 
-        global_id += 1
         ids.append(global_id)
-
+        global_id += 1
+        
     video_data["count"] = len(ids)
     video_data["ids"] = ids
     data.append(video_data)
 
-with open(dataset_folder + "/reid_data.json", "w") as f:
+with open(dataset_folder + "/video_data.json", "w") as f:
     json.dump(data, f)
