@@ -12,7 +12,7 @@ class DeepSortTracklet(SortTracklet):
         super().__init__(track_id, initial_box, initial_frame_index, timer)
         self.app_vecs = []
 
-        #self.smoothing_factor = 0.5
+        #self.smoothing_factor = 0.2
         #self.app_vec = None
 
 
@@ -28,6 +28,8 @@ class DeepSortTracklet(SortTracklet):
     def tracklet_similarity(self, det_app_vec):
         dists = [det_app_vec.T @ app_vec for app_vec in self.app_vecs]
         return max(dists)
+
+        #return det_app_vec.T @ self.app_vec
     
 
 class DeepSORT_Tracker(SORT_Tracker):
