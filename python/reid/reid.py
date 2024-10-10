@@ -47,6 +47,7 @@ class ReIDModel:
     def extract_feature(self, img, is_batch=True, numpy=False):
         if not is_batch: img = img.unsqueeze(0)
         img_vec = self.model(img.cuda())
+        img_vec = torch.nn.functional.normalize(img_vec, p=2, dim=-1)
 
         if numpy:
             return img_vec.cpu().detach().numpy()

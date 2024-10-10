@@ -193,7 +193,8 @@ def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
         ranking = np.argsort(scores)[::-1]
 
         in_topk = 0 in ranking[:k]
-        if in_topk: hits += 1
+        tie = np.any(scores[1:] + 0.01>= scores[0])
+        if in_topk and not tie: hits += 1
 
         if show_plots or (show_wrong and not in_topk):
             fig, axes = plt.subplots(1, images.shape[0], figsize=(16, 4))
@@ -211,29 +212,30 @@ def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
 
             plt.tight_layout()
             plt.show()
-
         
-
     print(f"Top {k} accuracy: {hits / len(dataset):.3f}")     
     
 
 
 if __name__ == "__main__":
     #load model
-    model = create_reid_model()
-    resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
+    for name in ["resnet_m05_randomTriplets", "resnet_m05_batchAll", "resnet_m05_batchSemiHard", "resnet_m05_batchSemiHard_pickRandom"]:
+        model = create_reid_model(name, 99)
+        resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
 
-    #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
-    #                                   min_track_length=50, 
-    #                                   transform=resize_and_pad)
+        #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
+        #                                   min_track_length=50, 
+        #                                   transform=resize_and_pad)
 
-    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
-                                  min_track_length=50, 
-                                  num_negatives=9,
-                                  transform=resize_and_pad,
-                                  same_video=True)
+        dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
+                                    min_track_length=50, 
+                                    num_negatives=9,
+                                    transform=resize_and_pad,
+                                    same_video=True)
 
-    #display_scores(model, dataset)
-    #pr_curve(model, dataset)
+        #display_scores(model, dataset)
+        #pr_curve(model, dataset)
 
-    query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)
+        print(name)
+        query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)
+        print()

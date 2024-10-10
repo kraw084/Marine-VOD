@@ -54,6 +54,10 @@ class ReIDTrainer:
         positive_embedding = self.model(positive)
         negative_embedding = self.model(negative)
 
+        anchor_embedding = anchor_embedding / torch.norm(anchor_embedding, dim=-1, keepdim=True)
+        positive_embedding = positive_embedding / torch.norm(positive_embedding, dim=-1, keepdim=True)
+        negative_embedding = negative_embedding / torch.norm(negative_embedding, dim=-1, keepdim=True)
+
         loss = self.loss_func(anchor_embedding, positive_embedding, negative_embedding)
 
         self.opt.zero_grad()
@@ -63,6 +67,14 @@ class ReIDTrainer:
         batch_loss = loss.item()
 
         progress_bar.set_postfix({"loss": batch_loss})
+
+        avg_anc_pos_dist = (1 - torch.sum(anchor_embedding * positive_embedding, dim=-1)).mean()
+        avg_anc_neg_dist = (1 - torch.sum(anchor_embedding * negative_embedding, dim=-1)).mean()
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Pos_Dist', avg_anc_pos_dist, e_i * len(self.loader) + progress_bar.n)
+        self.writer.add_scalar('TripletSelection/Avg_Anc_Neg_Dist', avg_anc_neg_dist, e_i * len(self.loader) + progress_bar.n)
+
+        num_of_triplets = anchor.shape[0]
+        self.writer.add_scalar('TripletSelection/Num_of_Triplets', num_of_triplets, e_i * len(self.loader) + progress_bar.n)
 
         #add batch loss to tensorboard
         self.writer.add_scalar('Loss/Batch_Loss', batch_loss, e_i * len(self.loader) + progress_bar.n)
@@ -320,7 +332,7 @@ if __name__ == "__main__":
     trainer = ReIDTrainer(model = resnet,
                           dataset = dataset,
                           epochs = 100,
-                          batch_size = 32,
+                          batch_size = 16,
                           lr = 1e-4,
                           weight_decay = 5e-4,
                           margin = 0.5,
