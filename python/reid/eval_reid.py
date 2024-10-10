@@ -11,13 +11,14 @@ import torchvision
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib
+import seaborn as sns
 
 try:
     from reid import create_reid_model
-    from reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset
+    from reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset, AllTripletsInVideo
 except:
     from reid.reid import create_reid_model
-    from reid.reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset
+    from reid.reid_data_utils import extract_bbox_image, resize_with_aspect_ratio, ReIDRandomTripletDataset, QueryGalleryDataset, AllTripletsInVideo
 
 
 def display_scores(reid_model, dataset):
@@ -214,7 +215,40 @@ def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
             plt.show()
         
     print(f"Top {k} accuracy: {hits / len(dataset):.3f}")     
-    
+
+
+def all_triplets_histogram(reid_model, dataset):
+    positives = []
+    negatives = []
+
+    for i in tqdm(range(len(dataset)), desc = f"Computing similarities", bar_format = "{l_bar}{bar:20}{r_bar}"):
+        global_id, positive_local_ids, negative_ids = dataset[i]
+        
+        positve_images = torch.stack([dataset.get_img(global_id, id) for id in positive_local_ids])
+        positive_embeddings = reid_model.extract_feature(positve_images, is_batch=True)
+
+        pos_sim_mat = reid_model.batch_vector_similarity(positive_embeddings, positive_embeddings)
+        pairs = torch.triu(pos_sim_mat, diagonal=1).nonzero()
+        positives += [pos_sim_mat[i, j].item() for i, j in pairs]
+
+        for neg_global_id, neg_local_ids in negative_ids:
+            neg_img = dataset.get_img(neg_global_id, neg_local_ids)
+            negative_embedding = reid_model.extract_feature(neg_img, is_batch=False)
+
+            neg_sim_mat = reid_model.batch_vector_similarity(positive_embeddings, negative_embedding)
+            negatives += [neg_sim_mat[i, 0].item() for i in range(neg_sim_mat.shape[0])]
+
+    plt.figure(figsize=(8, 6))
+
+    bin_width = 0.01
+    bins = np.arange(start=-1, stop=1 + bin_width, step=bin_width)
+    plt.hist(positives, bins=bins, color='skyblue', label='positive', density=True, alpha=0.7)
+    plt.hist(negatives, bins=bins, color='coral', label='negative', density=True, alpha=0.7)
+ 
+    plt.xlabel('Cosine Similarity')
+    plt.ylabel('Probability Density')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -227,15 +261,21 @@ if __name__ == "__main__":
         #                                   min_track_length=50, 
         #                                   transform=resize_and_pad)
 
-        dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
-                                    min_track_length=50, 
-                                    num_negatives=9,
-                                    transform=resize_and_pad,
-                                    same_video=True)
-
         #display_scores(model, dataset)
         #pr_curve(model, dataset)
 
-        print(name)
-        query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)
-        print()
+        #dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
+        #                            min_track_length=50, 
+        #                            num_negatives=9,
+        #                            transform=resize_and_pad,
+        #                            same_video=True)
+
+        #print(name)
+        #query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)
+        #print()
+
+        dataset = AllTripletsInVideo("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2", 
+                                     min_track_length=50, 
+                                     transform=resize_and_pad)
+        
+        all_triplets_histogram(model, dataset)

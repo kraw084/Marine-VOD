@@ -137,6 +137,40 @@ class ReIDMiningDataset(ReIDRandomTripletDataset):
         return images, torch.tensor([target_global_id] * self.items_per_id)
 
 
+class AllTripletsInVideo(ReIDRandomTripletDataset):
+    def __init__(self, dir, min_track_length=15, transform=None):
+        super().__init__(dir, min_track_length, transform, same_video=True)
+        self.limit = 20
+
+
+    def all_local_ids(self, id):
+        return [(id, int(i.strip(".jpg"))) for i in os.listdir(self.dir + f"/{id}")]
+    
+
+    def get_img(self, global_id, local_id):
+        img = torchvision.io.read_image(self.dir + f"/{global_id}/{local_id}.jpg").float() / 255
+
+        if self.transform:
+            img = self.transform(img)
+
+        return img
+
+    def __getitem__(self, index):
+        target_global_id = self.global_ids[index]
+        all_positive_local_ids = [int(i.strip(".jpg")) for i in os.listdir(self.dir + f"/{target_global_id}")]
+        all_positive_local_ids = random.sample(all_positive_local_ids, k=self.limit)
+
+        video_id = [i for i in range(len(self.video_ids)) if target_global_id in self.video_ids[i]][0]
+
+        all_negative_global_ids = [i for i in self.global_ids if i in self.video_ids[video_id] and i != target_global_id]
+        all_negative_local_ids = []
+        for i in all_negative_global_ids:
+            all_negative_local_ids += self.all_local_ids(i)
+        all_negative_local_ids = random.sample(all_negative_local_ids, k=self.limit)
+
+        return target_global_id, all_positive_local_ids, all_negative_local_ids
+
+
 def get_resized_size(image_size, target_size):
     aspect_ratio = image_size[0] / image_size[1]
     if aspect_ratio > 1:
