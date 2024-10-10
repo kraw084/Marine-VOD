@@ -10,7 +10,6 @@ from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort, deep_s
 from reid.reid import create_reid_model
 from reid.eval_reid import random_view_similarity
 
-
 if __name__ == "__main__":
 
     urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
@@ -24,7 +23,7 @@ if __name__ == "__main__":
     enable_BoTSORT = False
     enable_ByteTrack = False
     enable_OCSORT = False
-    enable_DeepSORT = False
+    enable_DeepSORT = True
 
     start = 0
     count = 0
@@ -36,7 +35,7 @@ if __name__ == "__main__":
         count += 1
         
         vid = Video_utils.Video(urchin_video_folder + "/" + vid_name)
-        random_view_similarity(vid, urchin_bot, urchin_reid_model)
+        #random_view_similarity(vid, urchin_bot, urchin_reid_model)
         
         if enable_fbf:
             fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid, True) 
@@ -70,12 +69,12 @@ if __name__ == "__main__":
 
         if enable_DeepSORT:
             deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
-                                                      lambda_iou=0.2, reid_model=urchin_reid_model, sim_min=0.7)
-            VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
+                                                      lambda_iou=0.0, reid_model=urchin_reid_model, sim_min=0.0)
+            #VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
             target_tracklets = deep_sort_tracklets
 
-        #target_tracklets.draw_tracklets()
-        #target_tracklets.video.play(1500, start_paused=True)
+        target_tracklets.draw_tracklets()
+        target_tracklets.video.play(1300, start_paused=True)
 
         #sort_tracklets.draw_tracklets()
         #deep_sort_tracklets.draw_tracklets()
