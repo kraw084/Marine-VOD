@@ -69,7 +69,7 @@ class ReIDModel:
             return cosine_sim_matrix
     
 
-def create_reid_model(name="resnet_m05_batchSemiHard", epoch=99):
+def create_reid_model(name="resnet_m05_batchAll", epoch=99):
     model = load_resnet()
     load_model(model, f"runs/{name}", f"models/Epoch_{epoch}.pt")
     return ReIDModel(model, (224, 224), 0.3)

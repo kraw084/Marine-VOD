@@ -68,9 +68,9 @@ if __name__ == "__main__":
             target_tracklets = oc_sort_tracklets
 
         if enable_DeepSORT:
-            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
-                                                      lambda_iou=0.0, reid_model=urchin_reid_model, sim_min=0.0)
-            #VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
+            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=20, probation_timer=5, min_hits=10, no_save=True, silence=False,
+                                                      lambda_iou=0.8, reid_model=urchin_reid_model, sim_min=0.5)
+            VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
             target_tracklets = deep_sort_tracklets
 
         target_tracklets.draw_tracklets()
