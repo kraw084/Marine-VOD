@@ -295,7 +295,7 @@ class AblumentationsWrapper():
 
 
 if __name__ == "__main__":
-    exp_name = "resnet_m05_randomTriplets_true"
+    exp_name = "resnet_m1_batchAll"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([v2.GaussianBlur((3, 3), (0.01, 2.0)),
@@ -311,11 +311,17 @@ if __name__ == "__main__":
                             ])
 
 
-    dataset = ReIDRandomTripletDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", 
-                                #items_per_id=10, 
+    dataset = ReIDMiningDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_v2", 
+                                items_per_id=10, 
                                 min_track_length=50, 
                                 transform=transform)
     
+    import matplotlib.pyplot as plt
+    for i in range(len(dataset)):
+        images = dataset[i][0]
+        for j in range(len(images)):
+            plt.imshow(images[j].permute(1, 2, 0))
+            plt.show()
 
     print(f"Dataset size: {len(dataset)}")
     print(f"Number of images: {dataset.num_of_images()}")
@@ -329,13 +335,13 @@ if __name__ == "__main__":
     resnet.cuda()
 
     #train model
-    trainer = ReIDTrainer(model = resnet,
+    trainer = ReIDTrainerBatchAllMining(model = resnet,
                           dataset = dataset,
                           epochs = 100,
                           batch_size = 16,
                           lr = 1e-4,
                           weight_decay = 5e-4,
-                          margin = 0.5,
+                          margin = 1,
                           save_path = f"runs/{exp_name}",
                           save_freq = 1,
                           device = "cuda",

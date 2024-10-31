@@ -21,12 +21,13 @@ if __name__ == "__main__":
     enable_seqNMS = False
     enable_SORT = False
     enable_BoTSORT = False
-    enable_ByteTrack = False
+    enable_ByteTrack = True
     enable_OCSORT = False
-    enable_DeepSORT = True
+    enable_DeepSORT = False
 
     start = 0
     count = 0
+
     for vid_name in os.listdir(urchin_video_folder):
         if count < start:
             count += 1
@@ -46,10 +47,8 @@ if __name__ == "__main__":
             target_tracklets = seqNMS_tracklets
 
         if enable_SORT:
-            #sort_tracklets = sort.SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False)
-            vid1 = Video_utils.Video(urchin_video_folder + "/" + vid_name)
-            sort_tracklets = sort.SORT(urchin_bot, vid1, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
-            VOD_utils.interpoalte_tracklet_set(sort_tracklets)
+            sort_tracklets = sort.SORT(urchin_bot, vid, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=True)
+            #VOD_utils.interpoalte_tracklet_set(sort_tracklets)
             target_tracklets = sort_tracklets
 
         if enable_BoTSORT:
@@ -68,13 +67,14 @@ if __name__ == "__main__":
             target_tracklets = oc_sort_tracklets
 
         if enable_DeepSORT:
-            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=30, probation_timer=3, min_hits=10, no_save=True, silence=False,
-                                                      lambda_iou=0.0, reid_model=urchin_reid_model, sim_min=0.9)
+            deep_sort_tracklets = deep_sort.Deep_SORT(urchin_bot, vid, iou_min=0.0, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False,
+                                                      lambda_iou=0.5, reid_model=urchin_reid_model, sim_min=0.0)
             VOD_utils.interpoalte_tracklet_set(deep_sort_tracklets)
             target_tracklets = deep_sort_tracklets
 
+
         target_tracklets.draw_tracklets()
-        target_tracklets.video.play(1300, start_paused=True)
+        target_tracklets.video.play(1300, start_paused = True)
 
         #sort_tracklets.draw_tracklets()
         #deep_sort_tracklets.draw_tracklets()

@@ -178,13 +178,31 @@ def random_view_similarity(video, detector, reid_model):
         view_similarity(target_box, frame, reid_model)
 
 
-def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
+def plot_qg_row(images, ranking, scores, ids, axes):
+    axes[0].imshow(images[0].permute(1, 2, 0))
+    axes[0].axis("off")
+    axes[0].set_title("Query")
+
+    for i, im_index in enumerate(ranking):
+        label = "P" if im_index == 0 else "N"
+        id = ids[im_index + 1]
+        axes[i+1].imshow(images[im_index + 1].permute(1, 2, 0))
+        axes[i+1].axis("off")
+        axes[i+1].set_title(f"{label} - {scores[im_index]:.3f}")
+
+
+def query_gallery(reid_model, dataset, k, show_plots=True, stack_plots=False, show_wrong=False, exclude_ties=False):
     hits = 0
 
     if not show_plots:
         iterator = tqdm(range(len(dataset)), total=len(dataset), bar_format="{l_bar}{bar:20}{r_bar}")
     else:
         iterator = range(len(dataset))
+
+    row_images = []
+    row_rankings = []
+    row_scores = []
+    row_ids = []
 
     for i in iterator:
         images, ids = dataset[i]
@@ -194,25 +212,36 @@ def query_gallery(reid_model, dataset, k, show_plots=True, show_wrong=False):
         ranking = np.argsort(scores)[::-1]
 
         in_topk = 0 in ranking[:k]
-        tie = np.any(scores[1:] + 0.01>= scores[0])
+
+        if exclude_ties:
+            tie = np.any(scores[[ranking[i] for i in ranking if i != 0]] + 0.01 >= scores[ranking[0]])
+        else:
+            tie = False
+
         if in_topk and not tie: hits += 1
 
-        if show_plots or (show_wrong and not in_topk):
+        if (show_plots and not stack_plots) or (show_wrong and (not in_topk or tie)):
             fig, axes = plt.subplots(1, images.shape[0], figsize=(16, 4))
-
-            axes[0].imshow(images[0].permute(1, 2, 0))
-            axes[0].axis("off")
-            axes[0].set_title("Query")
-
-            for i, im_index in enumerate(ranking):
-                label = "P" if im_index == 0 else "N"
-                id = ids[im_index + 1]
-                axes[i+1].imshow(images[im_index + 1].permute(1, 2, 0))
-                axes[i+1].axis("off")
-                axes[i+1].set_title(f"{label}({id}) - {scores[im_index]:.3f}")
-
+            plot_qg_row(images, ranking, scores, ids, axes)
             plt.tight_layout()
             plt.show()
+
+        if stack_plots:
+            row_images.append(images)
+            row_rankings.append(ranking)
+            row_scores.append(scores)
+            row_ids.append(ids)
+
+            if i%stack_plots == 0 and i > 0:
+                fig, axes = plt.subplots(stack_plots, len(row_images[0]), figsize=(16, 9))
+                for j in range(stack_plots):
+                    plot_qg_row(row_images[j], row_rankings[j], row_scores[j], row_ids[j], axes[j])
+                plt.tight_layout()
+                plt.show()
+                row_images = []
+                row_rankings = []
+                row_scores = []
+                row_ids = []
         
     print(f"Top {k} accuracy: {hits / len(dataset):.3f}")     
 
@@ -253,29 +282,29 @@ def all_triplets_histogram(reid_model, dataset):
 
 if __name__ == "__main__":
     #load model
-    for name in ["resnet_m05_randomTriplets", "resnet_m05_batchAll", "resnet_m05_batchSemiHard", "resnet_m05_batchSemiHard_pickRandom"]:
-        model = create_reid_model(name, 99)
-        resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
+    name = "resnet_m05_batchAll"
+    model = create_reid_model(name, 99)
+    resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
 
-        #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
-        #                                   min_track_length=50, 
-        #                                   transform=resize_and_pad)
+    #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
+    #                                   min_track_length=50, 
+    #                                   transform=resize_and_pad)
 
-        #display_scores(model, dataset)
-        #pr_curve(model, dataset)
+    #display_scores(model, dataset)
+    #pr_curve(model, dataset)
 
-        #dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
-        #                            min_track_length=50, 
-        #                            num_negatives=9,
-        #                            transform=resize_and_pad,
-        #                            same_video=True)
+    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
+                                    min_track_length=50, 
+                                    num_negatives=9,
+                                    transform=resize_and_pad,
+                                    same_video=True)
 
-        #print(name)
-        #query_gallery(model, dataset, 1, show_plots=False, show_wrong=False)
-        #print()
+    random.seed(42)
+    #query_gallery(model, dataset, 3, show_plots=False, stack_plots=False, show_wrong=False)
+    
 
-        dataset = AllTripletsInVideo("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2", 
-                                     min_track_length=50, 
-                                     transform=resize_and_pad)
-        
-        all_triplets_histogram(model, dataset)
+    dataset = AllTripletsInVideo("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2", 
+                                 min_track_length=50, 
+                                 transform=resize_and_pad)
+
+    all_triplets_histogram(model, dataset)
