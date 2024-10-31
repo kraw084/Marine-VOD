@@ -12,3 +12,4 @@ results/*.mp4
 TrackEval_results/
 runs
 *.pyc
+UrchinsNZ/
