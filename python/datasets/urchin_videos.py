@@ -14,7 +14,7 @@ from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
 
 
 desktop = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/"
-squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots.csv")
+squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V3.csv")
 
 name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
 name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
@@ -145,6 +145,47 @@ def urchin_gt_tracklet(vid_name, vid):
     return TrackletSet(vid, list(tracklets.values()), num_to_class)
 
 
+def trim_vid_to_tracklets(vid, tracklets):
+    min_frame = vid.num_of_frames
+    max_frame = 0
+    for tracklet in tracklets:
+        min_frame = min(min_frame, tracklet.start_frame)
+        max_frame = max(max_frame, tracklet.end_frame)
+
+    vid.set_frames(vid.frames[min_frame:max_frame+1], vid.fps)
+
+    return min_frame, max_frame
+
+
+def offset_tracklets(tracklets, offset):
+    for tracklet in tracklets:
+        tracklet.start_frame += offset
+        tracklet.end_frame += offset
+        tracklet.frame_indexes = [x + offset for x in tracklet.frame_indexes]
+
+
+def split_vid_and_tracklets(vid, tracklet_set, points):
+    new_tracklet_sets = []
+    new_vids = []
+
+    points = [0, *points, vid.num_of_frames]
+
+    for i in range(len(points) - 1):
+        start = points[i]
+        end = points[i+1]
+        tracklets = [t for t in tracklet_set if t.start_frame >= start and t.end_frame <= end]
+
+        new_vid = Video_utils.Video(vid.name + f"_part_{i}" + vid.file_type, True)
+        new_vid.set_frames(vid.frames, vid.fps)
+        new_min, new_max = trim_vid_to_tracklets(new_vid, tracklets)
+        offset_tracklets(tracklets, -new_min)
+        new_vids.append(new_vid)
+        new_tracklet_sets.append(TrackletSet(new_vid, tracklets, tracklet_set.num_to_class))
+
+
+    return new_vids, new_tracklet_sets
+
+
 #frame
 #id
 #top left x
@@ -156,16 +197,22 @@ def urchin_gt_tracklet(vid_name, vid):
 #vis (1)
 
 if __name__ == "__main__":
-    format_annotations()
-    format_txts()
+    #format_annotations()
+    #format_txts()
 
     urchin_video_folder = Config.Config.urchin_vid_path
     for vid_name in os.listdir(f"{folder}/lerped"):
         name = vid_name.split(".")[0]
+
         vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
-
-        print("Getting gts")
         gt = urchin_gt_tracklet(name, vid)
-        gt.draw_tracklets()
 
+        min_frame, max_frame = trim_vid_to_tracklets(vid, gt.tracklets)
+        print(min_frame, max_frame)
+        offset_tracklets(gt.tracklets, -min_frame)
+
+        print(vid_name)
+        print(name_to_file)
+
+        gt.draw_tracklets()
         vid.play(1200, start_paused = True)
