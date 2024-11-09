@@ -1,6 +1,7 @@
 import ast
 import os
 import sys
+import random
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -224,21 +225,100 @@ def save_trimmed_tracklets():
 
             vid.save(f"{folder}/{name if len(vids) == 1 else name + f'_part_{i}'}.mp4")
 
-#frame
-#id
-#top left x
-#top left y
-#width
-#height
-#confidene
-#class
-#vis (1)
+
+def read_txt(path):
+    with open(path, "r") as f:
+        lines = f.readlines()
+        lines = [line.strip().split(",") for line in lines]
+        lines = [[int(x) for x in line] for line in lines]
+
+        return np.array(lines)
+
+
+def data_summary(path=f"{folder}/trimmed"):
+    total_frames = 0
+    total_urchins = 0
+    total_counts = 0
+
+    if path.endswith(".txt"):
+        with open(path, "r") as f:
+            txts = f.readlines()
+            txts = [txt.strip() for txt in txts]
+        path = f"{folder}/trimmed"
+    else:
+        txts = os.listdir(path)
+
+    for txt in txts:
+        data = read_txt(f"{path}/{txt}")
+
+        frames = len(np.unique(data[:, 0]))
+        urchins = len(np.unique(data[:, 1]))
+        counts = np.bincount(data[:, 7])
+
+        if counts.shape[0] != 2:
+            counts = np.array([counts[0], 0])
+
+        total_frames += frames
+        total_urchins += urchins
+        total_counts += counts
+
+        print(txt)
+        print(f"Num of frames: {frames}")
+        print(f"Num of tracklets: {urchins}")
+        print(f"Class counts: {counts}")
+        print("-----------------------------")
+
+    print(f"Total num of frames: {total_frames}")
+    print(f"Total num of tracklets: {total_urchins}")
+    print(f"Total class counts: {total_counts}")
+
+
+def val_test_splits():
+    names = os.listdir(f"{folder}/trimmed")
+    random.shuffle(names)
+
+    with open(f"{folder}/val.txt", "w") as f:
+        for name in names[:len(names)//2]:
+            f.write(name + "\n")
+
+    with open(f"{folder}/test.txt", "w") as f:
+        for name in names[len(names)//2:]:
+            f.write(name + "\n")
+
+
+def urchin_gt_generator(val_or_test = "val"):
+    with open(f"{folder}/{val_or_test}.txt", "r") as f:
+        txts = f.readlines()
+        names = [txt.strip().split(".")[0] for txt in txts]
+
+    for name in names:
+        vid = Video_utils.Video(f"{Config.Config.urchin_vid_trimmed_path}/{name}.mp4")
+        tracklet_set = urchin_gt_tracklet(name, vid)
+
+        yield vid, tracklet_set
+
+#frame 0
+#id 1
+#top left x 2
+#top left y 3
+#width 4
+#height 5
+#confidene 6
+#class 7
+#vis 8
 
 if __name__ == "__main__":
     #format_annotations()
     #format_txts()
 
     #save_trimmed_tracklets()
+
+    #data_summary()
+    #val_test_splits()
+
+    data_summary(f"{folder}/val.txt")
+    print()
+    data_summary(f"{folder}/test.txt")
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path
@@ -254,11 +334,12 @@ if __name__ == "__main__":
             gt.draw_tracklets()
             vid.play(1200, start_paused = True)
 
-    urchin_video_folder = Config.Config.urchin_vid_trimmed_path
-    for vid_name in os.listdir(f"{folder}/trimmed"):
-        name = vid_name.split(".")[0]
-        vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
-        gt = urchin_gt_tracklet(name, vid)
+    if False:
+        urchin_video_folder = Config.Config.urchin_vid_trimmed_path
+        for vid_name in os.listdir(f"{folder}/trimmed"):
+            name = vid_name.split(".")[0]
+            vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
+            gt = urchin_gt_tracklet(name, vid)
 
-        gt.draw_tracklets()
-        vid.play(1200, start_paused = True)
+            gt.draw_tracklets()
+            vid.play(1200, start_paused = True)
