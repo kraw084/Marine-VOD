@@ -15,7 +15,7 @@ from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
 
 
 desktop = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/"
-squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V3.csv")
+squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V4.csv")
 
 name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
 name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
@@ -192,7 +192,7 @@ def save_trimmed_tracklets():
     for vid_name in tqdm(os.listdir(f"{folder}/lerped")):
         name = vid_name.split(".")[0]
         vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
-        gt = urchin_gt_tracklet(name, vid)
+        gt = urchin_gt_tracklet(name, vid, format="lerped")
 
 
         if name == "DSC_6238": 
@@ -223,7 +223,7 @@ def save_trimmed_tracklets():
                     f.write(",".join([str(x) for x in line]) + "\n")
 
 
-            vid.save(f"{folder}/{name if len(vids) == 1 else name + f'_part_{i}'}.mp4")
+            #vid.save(f"{folder}/{name if len(vids) == 1 else name + f'_part_{i}'}.mp4")
 
 
 def read_txt(path):
@@ -297,6 +297,10 @@ def urchin_gt_generator(val_or_test = "val"):
 
         yield vid, tracklet_set
 
+
+def only_matched_tracklets(tracklet_set, gt_tracklet_set):
+    
+
 #frame 0
 #id 1
 #top left x 2
@@ -308,17 +312,17 @@ def urchin_gt_generator(val_or_test = "val"):
 #vis 8
 
 if __name__ == "__main__":
-    #format_annotations()
-    #format_txts()
+    format_annotations()
+    format_txts()
 
-    #save_trimmed_tracklets()
+    save_trimmed_tracklets()
 
     #data_summary()
     #val_test_splits()
 
-    data_summary(f"{folder}/val.txt")
-    print()
-    data_summary(f"{folder}/test.txt")
+    #data_summary(f"{folder}/val.txt")
+    #print()
+    #data_summary(f"{folder}/test.txt")
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path

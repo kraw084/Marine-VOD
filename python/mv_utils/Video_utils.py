@@ -122,6 +122,17 @@ class Video:
         video.release()
         print(f"Saved as {video_file_path}")
 
+    def copy(self):
+        new_vid = Video(self.full_name, init_empty=True)
+        new_vid.set_frames([f.copy() for f in self], self.fps)
+
+        new_vid.path = self.path
+        new_vid.name = self.name
+        new_vid.file_type = self.file_type
+        new_vid.full_name = self.full_name
+
+        return new_vid
+
     def __repr__(self):
         return f"Video({self.full_name})"
     

@@ -11,9 +11,9 @@ class Config:
     minimal_labels = True #only draw id number and conf score in label
     labels_in_box = True #draw labels inside their box rather than on top
     data_text_colour = (0, 0, 0) #color to draw object counts in
-    box_thickness = 0.5 #percentage multiplier of bounding box thickness
-    label_font_size = 0.75 #percentage multiplier of font size
-    label_font_thickness = 1 #percentage multiple of font thickness
+    box_thickness = 1.5 #percentage multiplier of bounding box thickness
+    label_font_size = 1.5 #percentage multiplier of font size
+    label_font_thickness = 1.5 #percentage multiple of font thickness
 
     low_conf_colour = None #(255, 255, 255) #colour low conf labels differently (useful for testing byte track), set to none to colour them normally
     low_conf_th = 0.45 #conf score to be considered low conf for colouring purposes
