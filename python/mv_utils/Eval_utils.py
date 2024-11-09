@@ -227,6 +227,11 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
         preproc = "True"
         classes = ["pedestrian"]
         gt_dir = "TrackEval/data/gt/mot_challenge/"
+    elif dataset_name == "UrchinNZ":
+        bench = "UrchinsNZ"
+        preproc = "False"
+        classes = ["pedestrian"]
+        gt_dir = "TrackEval/data/gt/UrchinsNZ/"
 
     tracker_dir = "TrackEval_results"
 

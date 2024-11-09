@@ -122,8 +122,8 @@ def interpolate(boxes, factor=5):
     return lerped_boxes
 
 
-def urchin_gt_tracklet(vid_name, vid):
-    f = open(f"{folder}/lerped/{vid_name}.txt")
+def urchin_gt_tracklet(vid_name, vid, format="trimmed"):
+    f = open(f"{folder}/{format}/{vid_name}.txt")
     gts = f.readlines()
     gts = [line.strip().split(",") for line in gts]
     gts = [[int(x) for x in line] for line in gts] 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     #format_annotations()
     #format_txts()
 
-    save_trimmed_tracklets()
+    #save_trimmed_tracklets()
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path
@@ -253,3 +253,12 @@ if __name__ == "__main__":
 
             gt.draw_tracklets()
             vid.play(1200, start_paused = True)
+
+    urchin_video_folder = Config.Config.urchin_vid_trimmed_path
+    for vid_name in os.listdir(f"{folder}/trimmed"):
+        name = vid_name.split(".")[0]
+        vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
+        gt = urchin_gt_tracklet(name, vid)
+
+        gt.draw_tracklets()
+        vid.play(1200, start_paused = True)
