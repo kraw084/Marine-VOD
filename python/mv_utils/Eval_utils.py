@@ -344,15 +344,18 @@ class Evaluator:
                 self.ml += 1
             else:
                 self.pt += 1
+   
                 
     def compute_gt_track_status(self):
         """Computes the proportion of frames that a gt tracklet had a match"""
         return [self.gt_detection_lifetimes[gt_track.id]/len(gt_track.frame_indexes) for gt_track in self.gt_tracklets]
-     
+
+
     def id_of_best_match(self):
         """Returns a list of the pred tracklet id that each gt had the most number of hits with"""
         return [self.pred_tracklets.tracklets[i].id for i in np.argmax(self.match_matrix, axis=1)]
-                    
+
+
     def compute_metrics(self):
         """Computes metrics from the components"""
         p = self.tp / (self.tp + self.fp) if not (self.tp + self.fp) == 0 else 1

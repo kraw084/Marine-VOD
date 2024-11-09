@@ -177,14 +177,52 @@ def split_vid_and_tracklets(vid, tracklet_set, points):
 
         new_vid = Video_utils.Video(vid.name + f"_part_{i}" + vid.file_type, True)
         new_vid.set_frames(vid.frames, vid.fps)
-        new_min, new_max = trim_vid_to_tracklets(new_vid, tracklets)
-        offset_tracklets(tracklets, -new_min)
+        #new_min, new_max = trim_vid_to_tracklets(new_vid, tracklets)
+        #offset_tracklets(tracklets, -new_min)
         new_vids.append(new_vid)
-        new_tracklet_sets.append(TrackletSet(new_vid, tracklets, tracklet_set.num_to_class))
+        new_tracklet_sets.append(TrackletSet(new_vid, tracklets, tracklet_set.num_to_label))
 
 
     return new_vids, new_tracklet_sets
 
+
+def save_trimmed_tracklets():
+    urchin_video_folder = Config.Config.urchin_vid_path
+    for vid_name in tqdm(os.listdir(f"{folder}/lerped")):
+        name = vid_name.split(".")[0]
+        vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
+        gt = urchin_gt_tracklet(name, vid)
+
+
+        if name == "DSC_6238": 
+            vids, tss = split_vid_and_tracklets(vid, gt, [190, 550])
+        else:
+            vids = [vid]
+            tss = [gt]
+
+
+        for i in range(len(vids)):
+            vid = vids[i]
+            gt = tss[i]
+
+            ids = [t.id for t in gt.tracklets]
+            min_frame, max_frame = trim_vid_to_tracklets(vid, gt.tracklets)
+
+            with open(f"{folder}/lerped/{name}.txt", "r") as f:
+                lines = f.readlines()
+                lines = [line.strip().split(",") for line in lines]
+                lines = [[int(x) for x in line] for line in lines]
+
+                lines = [line for line in lines if line[1] in ids]
+                for j in range(len(lines)):
+                    lines[j][0] -= min_frame
+
+            with open(f"{folder}/trimmed/{name if len(vids) == 1 else name + f'_part_{i}'}.txt", "w") as f:
+                for line in lines:
+                    f.write(",".join([str(x) for x in line]) + "\n")
+
+
+            vid.save(f"{folder}/{name if len(vids) == 1 else name + f'_part_{i}'}.mp4")
 
 #frame
 #id
@@ -200,19 +238,18 @@ if __name__ == "__main__":
     #format_annotations()
     #format_txts()
 
-    urchin_video_folder = Config.Config.urchin_vid_path
-    for vid_name in os.listdir(f"{folder}/lerped"):
-        name = vid_name.split(".")[0]
+    save_trimmed_tracklets()
 
-        vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
-        gt = urchin_gt_tracklet(name, vid)
+    if False:
+        urchin_video_folder = Config.Config.urchin_vid_path
+        for vid_name in os.listdir(f"{folder}/lerped"):
+            name = vid_name.split(".")[0]
+            vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
+            gt = urchin_gt_tracklet(name, vid)
 
-        min_frame, max_frame = trim_vid_to_tracklets(vid, gt.tracklets)
-        print(min_frame, max_frame)
-        offset_tracklets(gt.tracklets, -min_frame)
+            min_frame, max_frame = trim_vid_to_tracklets(vid, gt.tracklets)
+            print(min_frame, max_frame)
+            offset_tracklets(gt.tracklets, -min_frame)
 
-        print(vid_name)
-        print(name_to_file)
-
-        gt.draw_tracklets()
-        vid.play(1200, start_paused = True)
+            gt.draw_tracklets()
+            vid.play(1200, start_paused = True)
