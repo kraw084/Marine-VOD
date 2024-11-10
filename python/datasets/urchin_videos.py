@@ -2,6 +2,7 @@ import ast
 import os
 import sys
 import random
+import shutil
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -10,7 +11,7 @@ import pandas as pd
 import cv2
 from tqdm import tqdm
 
-from mv_utils import Video_utils, Config
+from mv_utils import Video_utils, Config, Eval_utils
 from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
 
 
@@ -279,11 +280,11 @@ def val_test_splits():
 
     with open(f"{folder}/val.txt", "w") as f:
         for name in names[:len(names)//2]:
-            f.write(name + "\n")
+            f.write(name.split(".")[0] + "\n")
 
     with open(f"{folder}/test.txt", "w") as f:
         for name in names[len(names)//2:]:
-            f.write(name + "\n")
+            f.write(name.split(".")[0] + "\n")
 
 
 def urchin_gt_generator(val_or_test = "val"):
@@ -298,8 +299,50 @@ def urchin_gt_generator(val_or_test = "val"):
         yield vid, tracklet_set
 
 
-def only_matched_tracklets(tracklet_set, gt_tracklet_set):
-    
+def only_matched_tracklets(target_tracklets, gt_tracklet_set):
+     gt_ids, pred_ids = Eval_utils.correct_ids(gt_tracklet_set, target_tracklets, match_iou=0.3)
+     unique_ids = set([p[1] for p in pred_ids])
+     num_of_tracklets = len(target_tracklets.tracklets)
+     target_tracklets.tracklets = [t for t in target_tracklets.tracklets if t.id in unique_ids]
+     target_tracklets.id_to_index =  {track.id:i for i, track in enumerate(target_tracklets.tracklets)}
+
+     print(f"Removed {num_of_tracklets - len(target_tracklets.tracklets)} tracklet(s) with no matches")
+
+
+def mot_format(val_or_test = "val"):
+    with open(f"{folder}/{val_or_test}.txt", "r") as f:
+        names = f.readlines()
+        names = [name.strip() for name in names]
+
+    os.mkdir(f"TrackEval/data/gt/UrchinsNZ/UrchinsNZ-{val_or_test}")
+
+    for name in names:
+        just_name = name.split(".")[0]
+        os.mkdir(f"TrackEval/data/gt/UrchinsNZ/UrchinsNZ-{val_or_test}/{just_name}")
+        os.mkdir(f"TrackEval/data/gt/UrchinsNZ/UrchinsNZ-{val_or_test}/{just_name}/gt")
+
+        txt_contents = read_txt(f"{folder}/trimmed/{name}")
+        txt_contents[:, 0] += 1
+        np.savetxt(f"TrackEval/data/gt/UrchinsNZ/UrchinsNZ-{val_or_test}/{just_name}/gt/gt.txt", 
+                txt_contents, 
+                delimiter=",", 
+                fmt="%d")
+
+        vid = Video_utils.Video(f"{Config.Config.urchin_vid_trimmed_path}/{just_name}.mp4")
+
+        fps = vid.fps
+        length = vid.num_of_frames
+        frame_width, frame_hight = vid.size
+
+        with open(f"TrackEval/data/gt/UrchinsNZ/UrchinsNZ-{val_or_test}/{just_name}/seqinfo.ini", "w") as f:
+            f.write(f"[Sequence]\n")
+            f.write(f"name={just_name}\n")
+            f.write(f"imDir=img1\n")
+            f.write(f"frameRate={fps}\n")
+            f.write(f"seqLength={length}\n")
+            f.write(f"imWidth={frame_width}\n")
+            f.write(f"imHeight={frame_hight}\n")
+            f.write(f"imExt=.jpg\n")
 
 #frame 0
 #id 1
@@ -312,17 +355,20 @@ def only_matched_tracklets(tracklet_set, gt_tracklet_set):
 #vis 8
 
 if __name__ == "__main__":
-    format_annotations()
-    format_txts()
+    #format_annotations()
+    #format_txts()
 
-    save_trimmed_tracklets()
+    #save_trimmed_tracklets()
 
     #data_summary()
     #val_test_splits()
 
-    #data_summary(f"{folder}/val.txt")
+    data_summary(f"{folder}/val.txt")
     #print()
     #data_summary(f"{folder}/test.txt")
+
+    #mot_format()
+    #mot_format("test")
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path

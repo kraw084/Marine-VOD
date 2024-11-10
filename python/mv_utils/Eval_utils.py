@@ -208,7 +208,7 @@ def save_track_result(trackletSet, seq_name, tracker_name, dataset_name, sub_nam
     print("Tracklet results saved")
 
 
-def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", metrics = None):
+def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", metrics = None, iou_th=0.5):
     if metrics is None:
         metrics = ["HOTA", "CLEAR"]
 
@@ -241,7 +241,7 @@ def track_eval(tracker_name, sub_name, dataset_name = "MOT17", split = "train", 
          TRACKERS_TO_EVAL = [tracker_name],
          CLASSES_TO_EVAL = classes,
          DO_PREPROC = preproc,
-         THRESHOLD = "0.5",
+         THRESHOLD = str(iou_th),
 
          GT_FOLDER = gt_dir,
          TRACKERS_FOLDER =  tracker_dir,
