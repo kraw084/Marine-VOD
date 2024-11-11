@@ -194,13 +194,15 @@ class SORT_Tracker:
         """
         for track_i in range(len(self.active_tracklets) - 1, -1, -1):
             track = self.active_tracklets[track_i]
+            removed = False
 
             #tracklet has had a miss before timer is up
             if track_i in unassigned_track_indices and track.timer > 0: 
                 self.active_tracklets.pop(track_i)
+                removed = True
 
             #tracklets miss streak is too high
-            if track.miss_streak >= self.t_lost:
+            if not removed and track.miss_streak >= self.t_lost:
                 self.deceased_tracklets.append(track)
                 self.active_tracklets.pop(track_i)
 

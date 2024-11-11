@@ -17,6 +17,7 @@ class ByteTrack_Tracker(SORT_Tracker):
                  t_lost=1, 
                  probation_timer=3, 
                  min_hits=5, 
+                 low_conf_th=0.1,
                  greedy_assoc=False, 
                  no_save=False
                  ):
@@ -25,7 +26,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         self.name = "Byte Track"
         self.low_conf_th = model.conf
         self.orignal_conf = model.conf
-        self.model.update_parameters(0.1, self.model.iou)
+        self.model.update_parameters(low_conf_th, self.model.iou)
         self.kf_est_for_unmatched = False
         
     def track(self):
@@ -82,7 +83,7 @@ class ByteTrack_Tracker(SORT_Tracker):
         
         
 @silence
-def ByteTrack(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, greedy_assoc = False, no_save = False):
+def ByteTrack(model, video, iou_min = 0.5, t_lost = 1, probation_timer = 3, min_hits = 5, low_conf_th = 0.1, greedy_assoc = False, no_save = False):
     """Create and run the ByteTrack tracker with a single function"""
-    tracker = ByteTrack_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, greedy_assoc, no_save)
+    tracker = ByteTrack_Tracker(model, video, iou_min, t_lost, probation_timer, min_hits, low_conf_th, greedy_assoc, no_save)
     return tracker()

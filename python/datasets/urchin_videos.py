@@ -16,7 +16,7 @@ from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
 
 
 desktop = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/"
-squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V4.csv")
+squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V6.csv")
 
 name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
 name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
@@ -355,20 +355,19 @@ def mot_format(val_or_test = "val"):
 #vis 8
 
 if __name__ == "__main__":
-    #format_annotations()
-    #format_txts()
-
-    #save_trimmed_tracklets()
+    format_annotations()
+    format_txts()
+    save_trimmed_tracklets()
 
     #data_summary()
     #val_test_splits()
 
-    data_summary(f"{folder}/val.txt")
+    #data_summary(f"{folder}/val.txt")
     #print()
     #data_summary(f"{folder}/test.txt")
 
-    #mot_format()
-    #mot_format("test")
+    mot_format()
+    mot_format("test")
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path

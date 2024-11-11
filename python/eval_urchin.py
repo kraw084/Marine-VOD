@@ -8,14 +8,15 @@ if __name__ == "__main__":
 
     start = 0
 
-    display = False
+    display = True
+    show_correct = False
 
-
-    #Eval_utils.track_eval(tracker_name="SORT",
-    #                      sub_name="first_test",
-    #                      dataset_name="UrchinNZ",
-    #                      split="val",
-    #                      iou_th=0.5)
+    if False:
+        Eval_utils.track_eval(tracker_name="OC-SORT",
+                            sub_name=f"Final",
+                            dataset_name="UrchinNZ",
+                            split="val",
+                            iou_th=0.3)
 
     if True:
         for i, (vid1, gt) in enumerate(urchin_gt_generator("val")):
@@ -26,19 +27,34 @@ if __name__ == "__main__":
 
             vid2 = vid1.copy()
 
-            sort_tracklets = sort.SORT(urchin_bot, vid2, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=True)
-            target_tracklets = sort_tracklets
+            fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid2, True) 
+            #sort_tracklets = sort.SORT(urchin_bot, vid2, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
+            #bot_sort_tracklets = bot_sort.BoT_SORT(urchin_bot, vid2, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            #byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid2, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, low_conf_th=0.05, no_save=True, silence=False)
+            #byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid2, iou_min=0.2, t_lost=30, probation_timer=0, min_hits=1, low_conf_th=0.01, no_save=True, silence=False)
+            #oc_sort_tracklets = oc_sort.OC_SORT(urchin_bot, vid2, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
+            
+            target_tracklets = fbf_tracklets
 
-            only_matched_tracklets(target_tracklets, gt)
+            #VOD_utils.interpoalte_tracklet_set(target_tracklets)
+
+            #only_matched_tracklets(target_tracklets, gt)
+
 
             if display:
-                gt.draw_tracklets()
-                target_tracklets.draw_tracklets()
+                if show_correct:
+                    gt_ids, pred_ids = Eval_utils.correct_ids(gt, target_tracklets, match_iou=0.3)
+                    gt.draw_tracklets(gt_ids)
+                    target_tracklets.draw_tracklets(pred_ids)
+                else:
+                    gt.draw_tracklets()
+                    target_tracklets.draw_tracklets()
+
                 stitched_video = Video_utils.stitch_video(gt.video, target_tracklets.video, "gt_vs_tracking.mp4")
-                stitched_video.play(1500, start_paused = True)
+                stitched_video.play(1900, start_paused = True)
 
 
-            Eval_utils.save_track_result(target_tracklets, vid1.name, "SORT", "UrchinsNZ-val", "first_test")
+            Eval_utils.save_track_result(target_tracklets, vid1.name, "FBF", "UrchinsNZ-val", "first")
 
             #evaluator = Eval_utils.Evaluator("SORT", 0.5)
             #evaluator.set_tracklets(gt, target_tracklets)
