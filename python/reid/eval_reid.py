@@ -281,30 +281,35 @@ def all_triplets_histogram(reid_model, dataset):
 
 
 if __name__ == "__main__":
-    #load model
-    name = "resnet_m05_batchAll"
-    model = create_reid_model(name, 99)
-    resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
+    for name in os.listdir("runs"):
+        random.seed(42)
 
-    #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
-    #                                   min_track_length=50, 
-    #                                   transform=resize_and_pad)
+        
+        #load model
+        print(name)
+        model = create_reid_model(name, 90)
+        resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
 
-    #display_scores(model, dataset)
-    #pr_curve(model, dataset)
+        #dataset = ReIDRandomTripletDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val", 
+        #                                   min_track_length=50, 
+        #                                   transform=resize_and_pad)
 
-    dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2",
-                                    min_track_length=50, 
-                                    num_negatives=9,
-                                    transform=resize_and_pad,
-                                    same_video=True)
+        #display_scores(model, dataset)
+        #pr_curve(model, dataset)
 
-    random.seed(42)
-    #query_gallery(model, dataset, 3, show_plots=False, stack_plots=False, show_wrong=False)
-    
+        dataset = QueryGalleryDataset("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_train",
+                                        min_track_length=30, 
+                                        num_negatives=9,
+                                        transform=resize_and_pad,
+                                        same_video=True)
 
-    dataset = AllTripletsInVideo("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2", 
-                                 min_track_length=50, 
-                                 transform=resize_and_pad)
 
-    all_triplets_histogram(model, dataset)
+        query_gallery(model, dataset, 1, show_plots=False, stack_plots=False, show_wrong=False)
+        print()
+        
+
+        #dataset = AllTripletsInVideo("C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_val_2", 
+        #                            min_track_length=50, 
+        #                            transform=resize_and_pad)
+
+        #all_triplets_histogram(model, dataset)

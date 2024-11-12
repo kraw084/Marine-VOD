@@ -16,7 +16,7 @@ from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
 
 
 desktop = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/"
-squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V6.csv")
+squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V7.csv")
 
 name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
 name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
@@ -154,6 +154,8 @@ def trim_vid_to_tracklets(vid, tracklets):
         min_frame = min(min_frame, tracklet.start_frame)
         max_frame = max(max_frame, tracklet.end_frame)
 
+    if vid.name == "DSC_8700": max_frame = 130
+
     vid.set_frames(vid.frames[min_frame:max_frame+1], vid.fps)
 
     return min_frame, max_frame
@@ -215,7 +217,7 @@ def save_trimmed_tracklets():
                 lines = [line.strip().split(",") for line in lines]
                 lines = [[int(x) for x in line] for line in lines]
 
-                lines = [line for line in lines if line[1] in ids]
+                lines = [line for line in lines if line[1] in ids and line[0] <= max_frame]
                 for j in range(len(lines)):
                     lines[j][0] -= min_frame
 
@@ -366,7 +368,7 @@ if __name__ == "__main__":
     #print()
     #data_summary(f"{folder}/test.txt")
 
-    mot_format()
+    #mot_format()
     mot_format("test")
 
     if False:
@@ -384,11 +386,6 @@ if __name__ == "__main__":
             vid.play(1200, start_paused = True)
 
     if False:
-        urchin_video_folder = Config.Config.urchin_vid_trimmed_path
-        for vid_name in os.listdir(f"{folder}/trimmed"):
-            name = vid_name.split(".")[0]
-            vid = Video_utils.Video(urchin_video_folder + "/" + name + ".mp4")
-            gt = urchin_gt_tracklet(name, vid)
-
+        for vid, gt in urchin_gt_generator("test"):
             gt.draw_tracklets()
-            vid.play(1200, start_paused = True)
+            vid.play(1800, start_paused = True)

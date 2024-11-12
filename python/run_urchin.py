@@ -15,7 +15,7 @@ if __name__ == "__main__":
     urchin_bot =  Detectors.create_urchin_model(Config.Config.cuda)
     urchin_video_folder = Config.Config.urchin_vid_path
 
-    urchin_reid_model = create_reid_model()
+    #urchin_reid_model = create_reid_model()
 
     enable_fbf = False
     enable_seqNMS = False
@@ -34,6 +34,8 @@ if __name__ == "__main__":
             continue
 
         count += 1
+
+        print(vid_name)
         
         vid = Video_utils.Video(urchin_video_folder + "/" + vid_name)
         #random_view_similarity(vid, urchin_bot, urchin_reid_model)
@@ -57,7 +59,7 @@ if __name__ == "__main__":
             target_tracklets = bot_sort_tracklets
             
         if enable_ByteTrack:
-            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, no_save=True, silence=False)
+            byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid, iou_min=0.3, t_lost=30, probation_timer=5, min_hits=10, low_conf_th=0.1, no_save=True, silence=False)
             VOD_utils.interpoalte_tracklet_set(byte_track_tracklets)
             target_tracklets = byte_track_tracklets
             
@@ -74,7 +76,7 @@ if __name__ == "__main__":
 
 
         target_tracklets.draw_tracklets()
-        target_tracklets.video.play(1300, start_paused = True)
+        target_tracklets.video.play(1600, start_paused = True)
 
         #sort_tracklets.draw_tracklets()
         #deep_sort_tracklets.draw_tracklets()
