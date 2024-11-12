@@ -357,9 +357,9 @@ def mot_format(val_or_test = "val"):
 #vis 8
 
 if __name__ == "__main__":
-    format_annotations()
-    format_txts()
-    save_trimmed_tracklets()
+    #format_annotations()
+    #format_txts()
+    #save_trimmed_tracklets()
 
     #data_summary()
     #val_test_splits()
@@ -369,7 +369,7 @@ if __name__ == "__main__":
     #data_summary(f"{folder}/test.txt")
 
     #mot_format()
-    mot_format("test")
+    #mot_format("test")
 
     if False:
         urchin_video_folder = Config.Config.urchin_vid_path
@@ -385,7 +385,7 @@ if __name__ == "__main__":
             gt.draw_tracklets()
             vid.play(1200, start_paused = True)
 
-    if False:
+    if True:
         for vid, gt in urchin_gt_generator("test"):
             gt.draw_tracklets()
             vid.play(1800, start_paused = True)

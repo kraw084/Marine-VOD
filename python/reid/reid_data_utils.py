@@ -138,9 +138,9 @@ class ReIDMiningDataset(ReIDRandomTripletDataset):
 
 
 class AllTripletsInVideo(ReIDRandomTripletDataset):
-    def __init__(self, dir, min_track_length=15, transform=None):
+    def __init__(self, dir, min_track_length=15, limit=20, transform=None):
         super().__init__(dir, min_track_length, transform, same_video=True)
-        self.limit = 20
+        self.limit = limit
 
 
     def all_local_ids(self, id):
@@ -158,7 +158,7 @@ class AllTripletsInVideo(ReIDRandomTripletDataset):
     def __getitem__(self, index):
         target_global_id = self.global_ids[index]
         all_positive_local_ids = [int(i.strip(".jpg")) for i in os.listdir(self.dir + f"/{target_global_id}")]
-        all_positive_local_ids = random.sample(all_positive_local_ids, k=self.limit)
+        all_positive_local_ids = random.sample(all_positive_local_ids, k=self.limit) if (not self.limit is None) and (len(all_positive_local_ids) > self.limit) else all_positive_local_ids
 
         video_id = [i for i in range(len(self.video_ids)) if target_global_id in self.video_ids[i]][0]
 
@@ -166,7 +166,7 @@ class AllTripletsInVideo(ReIDRandomTripletDataset):
         all_negative_local_ids = []
         for i in all_negative_global_ids:
             all_negative_local_ids += self.all_local_ids(i)
-        all_negative_local_ids = random.sample(all_negative_local_ids, k=self.limit)
+        all_negative_local_ids = random.sample(all_negative_local_ids, k=self.limit) if (not self.limit is None) and (len(all_negative_local_ids) > self.limit) else all_negative_local_ids
 
         return target_global_id, all_positive_local_ids, all_negative_local_ids
 

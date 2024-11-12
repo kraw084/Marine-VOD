@@ -19,6 +19,3 @@ class Config:
     low_conf_th = 0.45 #conf score to be considered low conf for colouring purposes
 
     MOTDetector = "FRCNN" #What public detection set to use for MOT17 (FRCNN, SDP or DPM)
-
-
-   
