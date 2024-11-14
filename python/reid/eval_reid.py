@@ -281,13 +281,13 @@ def all_triplets_histogram(reid_model, dataset):
 
 
 if __name__ == "__main__":
-    split="val"
+    split="train"
 
-    qg = False
-    hist = True
+    qg = True
+    hist = False
 
     for name in os.listdir("runs"):
-        #if not name == "resnet_m05_randomTriplet": continue
+        if not name == "resnet_m05_BatchAll_pad00": continue
 
         random.seed(42)
 

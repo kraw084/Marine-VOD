@@ -295,7 +295,7 @@ class AblumentationsWrapper():
 
 
 if __name__ == "__main__":
-    exp_name = "resnet_m05_randomTriplet"
+    exp_name = "resnet_m05_BatchAll_pad00"
 
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([v2.GaussianBlur((3, 3), (0.01, 2.0)),
@@ -311,11 +311,11 @@ if __name__ == "__main__":
                             ])
 
 
-    dataset = ReIDRandomTripletDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_train", 
-                                #items_per_id=0, 
+    dataset = ReIDMiningDataset(dir="C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_train_pad00", 
+                                items_per_id=10, 
                                 min_track_length=30, 
                                 transform=transform)
-    
+
 
 
     print(f"Dataset size: {len(dataset)}")
@@ -330,17 +330,17 @@ if __name__ == "__main__":
     resnet.cuda()
 
     #train model
-    trainer = ReIDTrainer(model = resnet,
-                          dataset = dataset,
-                          epochs = 100,
-                          batch_size = 16,
-                          lr = 1e-4,
-                          weight_decay = 5e-4,
-                          margin = 0.5,
-                          save_path = f"runs/{exp_name}",
-                          save_freq = 1,
-                          device = "cuda",
-                          resume = None)
-    
+    trainer = ReIDTrainerBatchAllMining(model = resnet,
+                            dataset = dataset,
+                            epochs = 100,
+                            batch_size = 16,
+                            lr = 1e-4,
+                            weight_decay = 5e-4,
+                            margin = 0.5,
+                            save_path = f"runs/{exp_name}",
+                            save_freq = 10,
+                            device = "cuda",
+                            resume = None)
+
 
     trainer.train()

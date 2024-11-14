@@ -20,6 +20,7 @@ from reid_data_utils import resize_with_aspect_ratio, track_length_histogram, Re
 
 from train_reid import ReIDTrainer, AblumentationsWrapper, ReIDTrainerBatchHardMining, ReIDTrainerBatchSemiHardMining, ReIDTrainerBatchAllMining
 
+"""
 #Random Triplet with less Aug
 try:
     exp_name = "resnet_m05_randomTriplet_lessAug"
@@ -178,11 +179,13 @@ try:
 
 except Exception as e:
     print(e)
-
+"""
+    
 #Batch BatchAll
 try:
-    exp_name = "resnet_m05_BatchAll"
+    exp_name = "resnet_m05_BatchAll_lessAug"
 
+    """
     resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(256, 256))
     transform = v2.Compose([v2.GaussianBlur((3, 3), (0.01, 2.0)),
                             v2.ColorJitter(0.2, 0.1, 0.1, 0.05), #brightness, contrast, saturation, hue
@@ -193,6 +196,13 @@ try:
                                                                                         hole_height_range=(0.4, 0.6), 
                                                                                         hole_width_range=(0.4, 0.6),
                                                                                         p=0.2)),
+                            v2.RandomAffine(degrees=5, translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0.5)
+                            ])
+    """
+
+    resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
+    transform = v2.Compose([
+                            resize_and_pad,
                             v2.RandomAffine(degrees=5, translate=(0.1, 0.1), scale=(0.9, 1.1), fill=0.5)
                             ])
 

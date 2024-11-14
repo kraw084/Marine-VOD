@@ -16,13 +16,13 @@ from datasets.urchin_videos import urchin_gt_generator
 urchin_bot = create_urchin_model(Config.cuda)
 video_folder = Config.urchin_vid_path
 
-padding = 0.3
-split_to_make = "test"
+padding = 0.0
+split_to_make = "train"
+
+dataset_folder = f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split_to_make}_pad00"
 
 
 if split_to_make == "train":
-    dataset_folder = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_train"
-
     video_names = ["DSC_1802.MP4",  
                 "DSC_1876.MP4",   
                 "DSC_2168.MP4", 
@@ -45,7 +45,6 @@ if split_to_make == "train":
                 ]
 
 else:
-    dataset_folder = f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split_to_make}"
     gen = urchin_gt_generator(split_to_make)
     video_names = list(range(5))
 

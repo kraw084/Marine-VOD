@@ -88,8 +88,8 @@ class QueryGalleryDataset(ReIDRandomTripletDataset):
 
     def __getitem__(self, index):
         target_global_id = self.global_ids[index]
-        anchor_local_id = self.random_local(target_global_id)
-        positive_local_id = self.random_local(target_global_id, ignore=anchor_local_id)
+        anchor_local_id = self.random_local(target_global_id, min_dist=0)
+        positive_local_id = self.random_local(target_global_id, ignore=anchor_local_id, min_dist=0)
         
         negatives = []
         for i in range(self.num_negatives):
