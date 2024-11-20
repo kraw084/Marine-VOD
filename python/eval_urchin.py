@@ -1,3 +1,4 @@
+import time
 
 from mv_utils import Detectors, Video_utils, VOD_utils, Eval_utils, Cmc, Config
 from vod_methods import fbf, SeqNMS, sort, bot_sort, byte_track, oc_sort, deep_sort
@@ -8,7 +9,7 @@ if __name__ == "__main__":
 
     start = 0
 
-    display = True
+    display = False
     show_correct = False
 
     if False:
@@ -17,15 +18,22 @@ if __name__ == "__main__":
                             dataset_name="UrchinNZ",
                             split="val",
                             iou_th=0.3)
+        
+    
+    num_of_frames = 0
+    duration = 0
 
     if True:
-        for i, (vid1, gt) in enumerate(urchin_gt_generator("val")):
+        for i, (vid1, gt) in enumerate(urchin_gt_generator("test")):
             if i < start:
                 continue
 
             print(vid1.name)
 
             vid2 = vid1.copy()
+
+            num_of_frames += vid2.num_of_frames
+            s = time.time()
 
             fbf_tracklets = fbf.frame_by_frame_VOD_with_tracklets(urchin_bot, vid2, True) 
             #sort_tracklets = sort.SORT(urchin_bot, vid2, iou_min=0.3, t_lost=8, probation_timer=3, min_hits=5, no_save=True, silence=False, kf_est_for_unmatched=False)
@@ -34,6 +42,8 @@ if __name__ == "__main__":
             #byte_track_tracklets = byte_track.ByteTrack(urchin_bot, vid2, iou_min=0.2, t_lost=30, probation_timer=0, min_hits=1, low_conf_th=0.01, no_save=True, silence=False)
             #oc_sort_tracklets = oc_sort.OC_SORT(urchin_bot, vid2, iou_min=0.3, t_lost=30, probation_timer=3, min_hits=5, no_save=True, silence=False)
             
+            duration += time.time() - s
+
             target_tracklets = fbf_tracklets
 
             #VOD_utils.interpoalte_tracklet_set(target_tracklets)
@@ -54,9 +64,11 @@ if __name__ == "__main__":
                 stitched_video.play(1900, start_paused = True)
 
 
-            Eval_utils.save_track_result(target_tracklets, vid1.name, "FBF", "UrchinsNZ-val", "first")
+            #Eval_utils.save_track_result(target_tracklets, vid1.name, "FBF", "UrchinsNZ-val", "first")
 
             #evaluator = Eval_utils.Evaluator("SORT", 0.5)
             #evaluator.set_tracklets(gt, target_tracklets)
             #evaluator.eval_video(loading_bar=True)
             #evaluator.print_metrics(True)
+
+print(f"Average speed: {num_of_frames/duration}")

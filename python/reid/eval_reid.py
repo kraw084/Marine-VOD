@@ -281,37 +281,40 @@ def all_triplets_histogram(reid_model, dataset):
 
 
 if __name__ == "__main__":
-    split="train"
+    split="val"
 
     qg = True
     hist = False
 
     for name in os.listdir("runs"):
-        if not name == "resnet_m05_BatchAll_pad00": continue
+        if not name == "resnet_m05_BatchAll_pad06": continue
 
-        random.seed(42)
+        for i in (10, 20, 30, 40, 50, 60, 70, 80, 90, 99):
+            random.seed(42)
 
-        #load model
-        print(name)
-        model = create_reid_model(name, 90)
-        resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
-
-
-        if qg:
-            dataset = QueryGalleryDataset(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}",
-                                            min_track_length=15, 
-                                            num_negatives=9,
-                                            transform=resize_and_pad,
-                                            same_video=True)
-
-
-            query_gallery(model, dataset, 1, show_plots=False, stack_plots=False, show_wrong=False)
+            #load model
+            print(name)
+            print(i)
+            model = create_reid_model(name, i)
+            resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
             print()
-        
-        if hist:
-            dataset = AllTripletsInVideo(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}", 
-                                        min_track_length=15, 
-                                        limit=40,
-                                        transform=resize_and_pad)
 
-            all_triplets_histogram(model, dataset)
+
+            if qg:
+                dataset = QueryGalleryDataset(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}",
+                                                min_track_length=15, 
+                                                num_negatives=9,
+                                                transform=resize_and_pad,
+                                                same_video=True)
+
+
+                query_gallery(model, dataset, 1, show_plots=False, stack_plots=False, show_wrong=False)
+                print()
+            
+            if hist:
+                dataset = AllTripletsInVideo(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}", 
+                                            min_track_length=15, 
+                                            limit=40,
+                                            transform=resize_and_pad)
+
+                all_triplets_histogram(model, dataset)
