@@ -260,61 +260,90 @@ def all_triplets_histogram(reid_model, dataset):
         pairs = torch.triu(pos_sim_mat, diagonal=1).nonzero()
         positives += [pos_sim_mat[i, j].item() for i, j in pairs]
 
+        #seen_neg = False
+
         for neg_global_id, neg_local_ids in negative_ids:
             neg_img = dataset.get_img(neg_global_id, neg_local_ids)
             negative_embedding = reid_model.extract_feature(neg_img, is_batch=False)
 
             neg_sim_mat = reid_model.batch_vector_similarity(positive_embeddings, negative_embedding)
-            negatives += [neg_sim_mat[i, 0].item() for i in range(neg_sim_mat.shape[0])]
+
+            sim_scores = [neg_sim_mat[i, 0].item() for i in range(neg_sim_mat.shape[0])]
+
+            #for s in sim_scores:
+            #    if seen_neg: break
+            #    if s > 0.75:
+            #        fig, axes = plt.subplots(1, 2)
+            #        axes[0].imshow(positve_images[0].permute(1, 2, 0))
+            #        axes[1].imshow(neg_img.permute(1, 2, 0))
+            #        axes[0].axis("off")
+            #        axes[1].axis("off")
+            #        plt.suptitle(f"Similarity: {s:.3f}")
+            #        plt.show()
+            #        seen_neg = True
+
+            negatives += sim_scores
+
+        
 
     plt.figure(figsize=(8, 6))
 
-    bin_width = 0.01
-    bins = np.arange(start=-1, stop=1 + bin_width, step=bin_width)
-    plt.hist(positives, bins=bins, color='skyblue', label='positive', density=True, alpha=0.7)
-    plt.hist(negatives, bins=bins, color='coral', label='negative', density=True, alpha=0.7)
+    def norm_hist(values, col, label):
+        counts, bins = np.histogram(values, bins=50)
+        counts = counts / np.sum(counts)
+
+        plt.bar((bins[:-1] + bins[1:]) / 2, counts, width=np.diff(bins), color=col, alpha=0.7, label=label)
+
+    positives = np.array(positives)
+    negatives = np.array(negatives)
+
+    norm_hist(positives, 'skyblue', 'positive')
+    norm_hist(negatives, 'firebrick', 'negative')
+
+    #plt.hist(positives, bins=bins, color='skyblue', label='positive', density=False, alpha=0.7)
+    #plt.hist(negatives, bins=bins, color='firebrick', label='negative', density=False, alpha=0.7)
  
     plt.xlabel('Cosine Similarity')
-    plt.ylabel('Probability Density')
+    plt.ylabel('Normalised Histogram')
     plt.legend()
+    plt.title('Cosine similarity between positive pairs and negative pairs in the test set')
     plt.show()
 
 
 if __name__ == "__main__":
     split="val"
 
-    qg = True
-    hist = False
+    qg = False
+    hist = True
 
-    for name in os.listdir("runs"):
-        if not name == "resnet_m05_BatchAll_pad06": continue
+    for name in os.listdir("runs\\big_test"):
+        random.seed(42)
 
-        for i in (10, 20, 30, 40, 50, 60, 70, 80, 90, 99):
-            random.seed(42)
+        if not name == "resnet50_m05_BatchAll_03": continue
 
-            #load model
-            print(name)
-            print(i)
-            model = create_reid_model(name, i)
-            resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
-            print()
+        #load model
+        print(name)
+        model = create_reid_model("big_test\\" + name, 59)
+        resize_and_pad = functools.partial(resize_with_aspect_ratio, target_size=(224, 224))
 
+        padding = name.split("_")[-1]
+        
 
-            if qg:
-                dataset = QueryGalleryDataset(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}",
-                                                min_track_length=15, 
-                                                num_negatives=9,
-                                                transform=resize_and_pad,
-                                                same_video=True)
-
-
-                query_gallery(model, dataset, 1, show_plots=False, stack_plots=False, show_wrong=False)
-                print()
-            
-            if hist:
-                dataset = AllTripletsInVideo(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}", 
+        if qg:
+            dataset = QueryGalleryDataset(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}_pad{padding}",
                                             min_track_length=15, 
-                                            limit=40,
-                                            transform=resize_and_pad)
+                                            num_negatives=9,
+                                            transform=resize_and_pad,
+                                            same_video=True)
 
-                all_triplets_histogram(model, dataset)
+
+            query_gallery(model, dataset, 1, show_plots=False, stack_plots=False, show_wrong=False)
+            print()
+        
+        if hist:
+            dataset = AllTripletsInVideo(f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split}_pad{padding}", 
+                                        min_track_length=15, 
+                                        limit=40,
+                                        transform=resize_and_pad)
+
+            all_triplets_histogram(model, dataset)

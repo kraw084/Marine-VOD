@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from TrackEval.scripts.run_mot_challenge import main
 
-from .VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou
+from .VOD_utils import iou_matrix, trackletSet_frame_by_frame, iou, silence
 
 
 def correct_preds(gt, preds, iou_th=0.5):
@@ -177,7 +177,7 @@ def print_metrics(p, r, mota, motp, mt, pt, ml, id_switchs, frag):
     print(f"IDSW: {id_switchs}, FM: {frag}")
     print("-------------------------------------")
 
-
+@silence
 def save_track_result(trackletSet, seq_name, tracker_name, dataset_name, sub_name=""):
     #setup directories if they dont exist
     if not os.path.isdir(f"TrackEval_results/{dataset_name}"):

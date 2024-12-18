@@ -17,7 +17,7 @@ urchin_bot = create_urchin_model(Config.cuda)
 video_folder = Config.urchin_vid_path
 
 padding = 0.0
-split_to_make = "train"
+split_to_make = "test"
 
 dataset_folder = f"C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/reid_dataset_{split_to_make}_pad00"
 

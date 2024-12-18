@@ -12,19 +12,23 @@ import cv2
 from tqdm import tqdm
 
 from mv_utils import Video_utils, Config, Eval_utils
-from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box
+from mv_utils.VOD_utils import Tracklet, TrackletSet, round_box, silence
 
 
 desktop = "C:/Users/kraw084/OneDrive - The University of Auckland/Desktop/"
-squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V7.csv")
-
-name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
-name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
 
 folder = "UrchinsNZ"
 
 num_to_class = ["Evechinus chloroticus","Centrostephanus rodgersii"]
 class_to_num = dict(zip(num_to_class, range(len(num_to_class))))
+
+
+if __name__ == "__main__":
+    squidle_annotations = pd.read_csv(f"{desktop}squidle_vid_annots_V7.csv")
+
+    name_to_file = pd.read_csv(f"{desktop}Video_Files.csv")
+    name_to_file = dict(zip(name_to_file["File"], name_to_file["Video"]))
+
 
 
 def process_image_name(name):
@@ -300,7 +304,7 @@ def urchin_gt_generator(val_or_test = "val"):
 
         yield vid, tracklet_set
 
-
+@silence
 def only_matched_tracklets(target_tracklets, gt_tracklet_set):
      gt_ids, pred_ids = Eval_utils.correct_ids(gt_tracklet_set, target_tracklets, match_iou=0.3)
      unique_ids = set([p[1] for p in pred_ids])

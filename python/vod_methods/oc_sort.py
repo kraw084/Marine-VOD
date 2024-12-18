@@ -16,6 +16,9 @@ class OC_SortTracklet(SortTracklet):
     def __init__(self, track_id, initial_box, initial_frame_index, timer):
         super().__init__(track_id, initial_box, initial_frame_index, timer)
         self.last_observation = initial_box
+        self.last_kf_x = self.kf_tracker.kf.x
+        self.last_kf_p = self.kf_tracker.kf.P
+        self.last_list_index = len(self.boxes) - 1
     
     def add_box(self, box, frame_index, im_shape=None, observation=None):
         #if this is the first observation seen after a miss streak trigger ORU
