@@ -2,8 +2,8 @@ import torch
 import numpy as np
 import os
 
-from YOLOX.exps.custom.yolox_x_ablation import Exp
-from YOLOX.tools.demo import Predictor
+#from YOLOX.exps.custom.yolox_x_ablation import Exp
+#from YOLOX.tools.demo import Predictor
 
 from .Config import Config
 
